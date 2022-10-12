@@ -503,3 +503,10 @@ macro(ParseArgumentsWithConditions argName options oneValRequired oneValOptional
 		CheckRequiredVariables(${argName}_${__varName})
 	endforeach()
 endmacro()
+
+# Вспомогательная цель.
+# В отличие от add_custom_target не светится в целях сборки, но позволяет задавать и читать атрибуты.
+# Замена глобальным переменным, т.к. не пишется в кеш-файл между сборками.
+function(AddAuxiliaryTarget name)
+	add_library(${name} STATIC IMPORTED GLOBAL)
+endfunction()

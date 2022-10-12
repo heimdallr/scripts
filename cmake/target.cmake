@@ -3,19 +3,18 @@ include_guard(GLOBAL)
 include(CMakeParseArguments)
 
 set(CMAKE_DEBUG_POSTFIX "D")
-set(SCRIPT_HELPERS_DIR "${CMAKE_CURRENT_LIST_DIR}/../helpers")
+set(BUILDSCRIPTS_HELPERS_DIR "${CMAKE_CURRENT_LIST_DIR}/../helpers")
+include(${CMAKE_CURRENT_LIST_DIR}/thirdparty/qt/qt_macro.cmake)
+#include(${CMAKE_CURRENT_LIST_DIR}/resources/locales.cmake)
+#include(${CMAKE_CURRENT_LIST_DIR}/resources/themes.cmake)
+#include(${CMAKE_CURRENT_LIST_DIR}/resources/resources.cmake)
+#include(${CMAKE_CURRENT_LIST_DIR}/resources/remote_resources)
+include("${CMAKE_CURRENT_LIST_DIR}/thirdparty/ThirdpartyModule.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/thirdparty/qt/qt.cmake")
 
-# BIN_DIR можеть быть задан в параметрах генерации
-if(NOT BIN_DIR)
-	set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
-else()
-	string(REPLACE "\\" "/" BIN_DIR ${BIN_DIR})
-endif()
-message(STATUS "Using directory ${BIN_DIR} for output")
-
-#######################################################
+#################################################
 # Вспомогательные функции/макросы для AddTarget #
-#######################################################
+#################################################
 
 # Сброс всех текущих переменных.
 macro(initProject)
@@ -160,7 +159,7 @@ function(postTarget TARGET_NAME)
 	endif()
 
 	# по дефолту всегда генерим PDB в Release.
-	if (MSVC AND NOT (TargetType STREQUAL "STATIC") AND NOT WIN_DISABLE_RELEASE_PDB AND NOT ARG_NO_DEBUG_SYMBOLS)
+	if (MSVC AND NOT (TargetType STREQUAL "STATIC") AND NOT MOVAVI_WIN_DISABLE_RELEASE_PDB AND NOT ARG_NO_DEBUG_SYMBOLS)
 		set_target_properties( ${ARG_NAME} PROPERTIES LINK_FLAGS_RELEASE " /DEBUG " )
 	endif()
 endfunction()
@@ -190,7 +189,15 @@ function(setTargetOutput TARGET_NAME TARGET_TYPE OUTPUT_NAME)
 			set_target_properties( ${TARGET_NAME} PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY_DEBUG ${BIN_DIR}/${ARG_OUTPUT_SUBDIRECTORY}
 				RUNTIME_OUTPUT_DIRECTORY_RELEASE ${BIN_DIR}/${ARG_OUTPUT_SUBDIRECTORY}
+				OUTPUT_SUBDIRECTORY "${ARG_OUTPUT_SUBDIRECTORY}"
 			)
+			if (NOT (CMAKE_GENERATOR MATCHES "Visual Studio"))
+				# для генераторов кроме VS переместим lib в поддиректорию, но:
+				# msbuild2ninja для Wuild генерит пути без lib/префикса в начале. Workaround этого бага до фикса msbuild2ninja.
+				set_target_properties( ${TARGET_NAME} PROPERTIES
+					ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib # .lib .exp файлы.
+				)
+			endif()
 			set_target_properties( ${TARGET_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX} )
 			set( RUNTIME_FILE_${TARGET_NAME}_Debug "${file_prefix}${OUTPUT_NAME}${CMAKE_DEBUG_POSTFIX}${file_suffix}" CACHE FILEPATH "" FORCE )
 			set( RUNTIME_FILE_${TARGET_NAME}_Release "${file_prefix}${OUTPUT_NAME}${file_suffix}" CACHE FILEPATH "" FORCE )
@@ -212,11 +219,15 @@ endfunction(setTargetOutput TARGET_NAME)
 function(CreateExportLibFile target definition_name output_file)
 	set(TARGET ${target})
 	set(DEFINITION_NAME ${definition_name})
-	configure_file(${SCRIPT_HELPERS_DIR}/ExportLib.h.in ${output_file} @ONLY)
+	configure_file(${BUILDSCRIPTS_HELPERS_DIR}/ExportLib.h.in ${CMAKE_CURRENT_BINARY_DIR}/export/${output_file} @ONLY)
 endfunction()
 
-function(PrepareTargetSources SourcesList ExtraIncludes)
-	file(GLOB_RECURSE allFiles "${ARG_SOURCE_DIR}/[^.]*" ) # Пропуск скрытых файлов
+# Список переменных которые ожидаются быть выставленными: (TODO: избавиться от этих зависимостей.
+# ARG_QT ARG_QT_USE ARG_FORMS ARG_QRC ARG_EXCLUDE_SOURCES ARG_INCLUDE_DIRS ARG_UIC_POSTPROCESS_SCRIPTS
+# ARG_WIN_APP_ICON ARG_WIN_RC ARG_MAC_XIB
+# ARG_RESOURCE_MODULES ARG_REMOTE_RESOURCE_PACKAGES ARG_AMALGAMATION_MODE
+function(PrepareTargetSources TargetName SourceDir)
+	file(GLOB_RECURSE allFiles "${SourceDir}/[^.]*" ) # Пропуск скрытых файлов
 	set(CURRENT_HEADERS ${allFiles})
 	list(FILTER CURRENT_HEADERS INCLUDE REGEX "\\.h$")
 	set(CURRENT_SOURCES ${allFiles})
@@ -235,20 +246,20 @@ function(PrepareTargetSources SourcesList ExtraIncludes)
 			list(APPEND CURRENT_RESOURCES ${ARG_QRC})
 		endif()
 		foreach(qrc_file ${ARG_QRC})
-			message( STATUS "${ARG_NAME}: Using additional qrc: ${qrc_file}" )
-			check_if_exists(${qrc_file} "${ARG_NAME}: ${qrc_file} file specified in QRC list not exists")
+			message( STATUS "${TargetName}: Using additional qrc: ${qrc_file}" )
+			check_if_exists(${qrc_file} "${TargetName}: ${qrc_file} file specified in QRC list not exists")
 		endforeach()
 		filterSources(CURRENT_FORMS ${ARG_EXCLUDE_SOURCES})
 		filterSources(CURRENT_RESOURCES ${ARG_EXCLUDE_SOURCES})
 	endif()
 
 	if (WIN32 AND ARG_WIN_APP_ICON)
-		append( CURRENT_SOURCES "${ARG_NAME}/win_resources.rc" )
+		append( CURRENT_SOURCES "${TargetName}/win_resources.rc" )
 	endif()
 
 	if (WIN32)
 		foreach(rc_file ${ARG_WIN_RC})
-			message( STATUS "${ARG_NAME}: Using additional win rc: ${rc_file}" )
+			message( STATUS "${TargetName}: Using additional win rc: ${rc_file}" )
 			append(CURRENT_SOURCES ${rc_file})
 		endforeach()
 	endif()
@@ -267,9 +278,22 @@ function(PrepareTargetSources SourcesList ExtraIncludes)
 		if (Designer IN_LIST ARG_QT_USE)
 			set(hasDesigner true)
 		endif()
-		preTargetQt(${hasDesigner} "${ARG_INCLUDE_DIRS}" CURRENT_QT_FILES ExtraQtIncludes CURRENT_SOURCES_MOC)
-		set(${ExtraIncludes} ${${ExtraIncludes}} ${ExtraQtIncludes} PARENT_SCOPE)
-		append(ALL_SOURCES ${CURRENT_QT_FILES})
+		preTargetQt(${hasDesigner} "${ARG_INCLUDE_DIRS}" "${ARG_UIC_POSTPROCESS_SCRIPTS}" CURRENT_QT_FILES CURRENT_QT_UI_FILES ExtraQtIncludes CURRENT_SOURCES_MOC)
+		if (ExtraQtIncludes)
+			target_include_directories(${TargetName} PRIVATE ${ExtraQtIncludes})
+		endif()
+		if (CURRENT_QT_UI_FILES)
+			file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/UiDepends")
+			set(uiDepends ${CMAKE_CURRENT_BINARY_DIR}/UiDepends/${TargetName}.ui-depends)
+			add_custom_command (
+				OUTPUT ${uiDepends}
+				COMMAND ${CMAKE_COMMAND} -E touch ${uiDepends}
+				DEPENDS ${CURRENT_QT_UI_FILES}
+				COMMENT "Touch ${uiDepends}")
+			append(ALL_SOURCES ${uiDepends})
+			set_target_properties(${TargetName} PROPERTIES QT_UI_DEPENDS ${uiDepends})
+		endif()
+		append(ALL_SOURCES ${CURRENT_QT_FILES} ${CURRENT_QT_UI_FILES})
 	endif()
 
 	if (APPLE)
@@ -285,13 +309,25 @@ function(PrepareTargetSources SourcesList ExtraIncludes)
 		endforeach()
 	endif()
 
+	# Локализации
+#	WrapLocales(ALL_SOURCES "${ARG_RESOURCE_MODULES}")
+
+	# Темы
+#	WrapThemes(ALL_SOURCES "${ARG_RESOURCE_MODULES}")
+
+	# Ресурсы
+#	WrapResources(ALL_SOURCES "${ARG_RESOURCE_PACKAGES}")
+
+	# Удалённые ресурсы
+#	WrapRemoteResources(ALL_SOURCES "${ARG_REMOTE_RESOURCE_PACKAGES}")
+
 	# Объединенные сборки
 	if (NOT ARG_AMALGAMATION_MODE)
 		set(ARG_AMALGAMATION_MODE moc)
 	endif()
 	if (ARG_AMALGAMATION_MODE STREQUAL "moc" OR ARG_AMALGAMATION_MODE STREQUAL "all" )
 		set(miminalFilesCount 2) # miminalFilesCount + 1 = сколько файлов минимально должно быть в списке для амальгамирования
-		set(amalgamationBuildFile ${CMAKE_CURRENT_BINARY_DIR}/amalgamation/amalg_${ARG_NAME}.cpp)
+		set(amalgamationBuildFile ${CMAKE_CURRENT_BINARY_DIR}/amalgamation/amalg_${TargetName}.cpp)
 		set(fileMask ".*\\.cpp")
 		set(amalgSources ${ALL_SOURCES})
 		if (ARG_AMALGAMATION_MODE STREQUAL "moc")
@@ -305,15 +341,15 @@ function(PrepareTargetSources SourcesList ExtraIncludes)
 		if (amalgSourcesSize GREATER miminalFilesCount)
 			string(REPLACE ";" ">\n#include <" amalgamation_lines "${amalgSources}")
 			set(amalgamation_lines "#include <${amalgamation_lines}>\n")
-			configure_file(${SCRIPT_HELPERS_DIR}/AmalgamationBuild.cpp.in "${amalgamationBuildFile}")
+			configure_file(${BUILDSCRIPTS_HELPERS_DIR}/AmalgamationBuild.cpp.in "${amalgamationBuildFile}")
 			set_source_files_properties(${amalgSources} PROPERTIES HEADER_FILE_ONLY true)
 			append_unique(ALL_SOURCES "${amalgamationBuildFile}")
 		endif()
 	endif()
 
+	# EXTRA_TARGET_SOURCES - добавляет VLD для поиска утечек. CMAKE_CURRENT_LIST_FILE - текущий CMakeLists.txt.
 	append(ALL_SOURCES ${EXTRA_TARGET_SOURCES} ${CMAKE_CURRENT_LIST_FILE})
-
-	set(${SourcesList} ${ALL_SOURCES} PARENT_SCOPE)
+	target_sources(${TargetName} PRIVATE ${ALL_SOURCES})
 endfunction()
 
 function(GenerateQtConf output_path)
@@ -325,11 +361,11 @@ function(GenerateQtConf output_path)
 
 	if(CMAKE_GENERATOR MATCHES Xcode)
 		foreach (type ${CMAKE_CONFIGURATION_TYPES})
-			configure_file( ${SCRIPT_HELPERS_DIR}/qt.conf.nofixup.in ${CMAKE_CURRENT_BINARY_DIR}/${type}${PATH_IN_BUNDLE}/qt.conf @ONLY )
+			configure_file( ${BUILDSCRIPTS_HELPERS_DIR}/qt.conf.nofixup.in ${CMAKE_CURRENT_BINARY_DIR}/${type}${PATH_IN_BUNDLE}/qt.conf @ONLY )
 		endforeach()
 	else()
 		set(bundleBinaryPath "${CMAKE_CURRENT_BINARY_DIR}${PATH_IN_BUNDLE}")
-		configure_file( ${SCRIPT_HELPERS_DIR}/qt.conf.nofixup.in ${bundleBinaryPath}/qt.conf @ONLY )
+		configure_file( ${BUILDSCRIPTS_HELPERS_DIR}/qt.conf.nofixup.in ${bundleBinaryPath}/qt.conf @ONLY )
 	endif()
 endfunction()
 
@@ -356,7 +392,7 @@ function(AddTarget)
 	set(__one_val_required
 		NAME                # Имя цели, обязательно
 		TYPE                # Тип цели shared_lib|static_lib|app|app_bundle|app_console|header_only
-		SOURCE_DIR          # Путь к папке с исходниками
+		SOURCE_DIR          # Путь к папке с исходниками, относительно корня Movavi
 		)
 	set(__one_val_optional
 		PROJECT_GROUP       # Группа проекта, может быть составной "Proc/Codec"
@@ -366,7 +402,9 @@ function(AddTarget)
 		BUNDLE_ICONS        # Путь к icns для bundle
 		ENTITLEMENTS        # Entitlement с которыми будет подписан таргет для AppStore, либо для активации hardened runtime
 		WIN_APP_ICON        # Путь до иконки приложения (win)
+		WIN_RESOURCE_PATH   # Кастомный путь до win_resources.rc.in
 		AMALGAMATION_MODE   # тип объединенной сборки. all|moc|none , all = все исходники объединяются, moc - только moc-файлы. По умолчанию - moc.
+		CXX_STANDARD        # версия С++. 17|20, по умолчанию 20.
 		)
 	set(__multi_val
 		COMPILER_OPTIONS             # дополнительные опции для компилятора
@@ -393,10 +431,9 @@ function(AddTarget)
 		CONFIGS                      # Здесь указываются файлы конфигурирующие данное приложение (пресеты, ...)
 		WIN_RC                       # Дополнительные *.rc файлы с виндовыми ресурсами, будут подключены и влинкованы в этот модуль
 		REPO_DEPENDENCIES            # Зависимые репозитории (их NAME), которые будут добавлены в качестве INCLUDE_DIRS.
+		UIC_POSTPROCESS_SCRIPTS      # Список файлов cmake, используемых как команды поспроцессинга UIC (вызываются после него)
 	)
 	ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
-
-	message( STATUS "Add target: ${ARG_NAME}")
 
 	list_exists_item(EXCLUDED_PLUGINS ${ARG_NAME} isExcluded)
 	if (isExcluded)
@@ -404,6 +441,19 @@ function(AddTarget)
 	endif()
 
 	initProject()
+
+#	DetermineRepoName(${ARG_SOURCE_DIR} repoName)
+#	if (${repoName}_DEPENDENCIES)
+#		append(ARG_REPO_DEPENDENCIES ${${repoName}_DEPENDENCIES})
+#	endif()
+
+	foreach (repoNameDep ${ARG_REPO_DEPENDENCIES})
+		if (${repoNameDep}_SRC_DIR)
+			append(ARG_INCLUDE_DIRS ${${repoNameDep}_SRC_DIR})
+		else()
+			message(FATAL_ERROR "Invalid repo name: ${repoNameDep} in ${ARG_NAME}")
+		endif()
+	endforeach()
 
 	set(publicIncludes)
 	if (ARG_EXPORT_INCLUDE)
@@ -439,18 +489,14 @@ function(AddTarget)
 		set( QT_PLUGINS_FILES ${QT_PLUGINS_FILES} CACHE INTERNAL "" FORCE)
 	endif()
 
-	append( EXTRA_INCLUDE_DIRECTORIES "${ARG_SOURCE_DIR}" ${ARG_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
-
-	PrepareTargetSources(ALL_SOURCES EXTRA_INCLUDE_DIRECTORIES)
-
 	if(ARG_COMPILER_OPTIONS)
 		# Дополнительные флаги компиляции
 		foreach(instruction ${ARG_COMPILER_OPTIONS})
-			set(exist_${instruction} true)
+			set(supported true)
 			if (NOT MSVC)
-				CHECK_CXX_COMPILER_FLAG(${instruction} exist_${instruction})
+				CheckCXXCompilerFlagCached(${instruction} supported)
 			endif()
-			if(${exist_${instruction}})
+			if(${supported})
 				append( EXTRA_COMPILE_FLAGS ${instruction} )
 			endif()
 		endforeach()
@@ -484,34 +530,36 @@ function(AddTarget)
 		set( TargetType "" )
 		set( CreateTarget "executable" )
 	elseif(${ARG_TYPE} STREQUAL header_only)
-		# TODO: Interface targets are not presetnted in IDE
-		#add_library(${ARG_NAME} INTERFACE)
-		#target_sources(${ARG_NAME} INTERFACE ${ALL_SOURCES})
-
 		set( TargetType STATIC )
 		set( CreateTarget "library" )
-		configure_file(${SCRIPT_HELPERS_DIR}/HeaderOnlyLibraryStub.cpp.in ${ARG_NAME}_stub.cpp)
-		append(ALL_SOURCES ${ARG_NAME}_stub.cpp)
 	else()
 		message( FATAL_ERROR "Unknown target TYPE: ${ARG_TYPE}" )
-	endif()
-
-	set ( PROJECT_GROUP_PREFIX )
-	if (NOT DEFINED OBJLIB_SUFFIX)
-		set ( OBJLIB_SUFFIX _ )
 	endif()
 
 	if(CreateTarget STREQUAL "library")
 		add_library( ${ARG_NAME}
 			${TargetType}
-			${ALL_SOURCES}
 		)
 	elseif(CreateTarget STREQUAL "executable")
 		add_executable( ${ARG_NAME}
 			${TargetType}
-			${ALL_SOURCES}
 		)
 	endif()
+
+	if(${ARG_TYPE} STREQUAL header_only)
+		set(stubFolder ${CMAKE_CURRENT_BINARY_DIR}/stubs)
+		file(MAKE_DIRECTORY ${stubFolder})
+		configure_file(${BUILDSCRIPTS_HELPERS_DIR}/HeaderOnlyLibraryStub.cpp.in ${stubFolder}/${ARG_NAME}_stub.cpp)
+		target_sources(${ARG_NAME} PRIVATE ${stubFolder}/${ARG_NAME}_stub.cpp)
+	endif()
+
+	target_include_directories(${ARG_NAME} PRIVATE 
+		"${ARG_SOURCE_DIR}"
+		${ARG_INCLUDE_DIRS}
+		${CMAKE_CURRENT_BINARY_DIR}
+		${CMAKE_CURRENT_BINARY_DIR}/export
+		)
+	PrepareTargetSources(${ARG_NAME} "${ARG_SOURCE_DIR}")
 
 	# подключаем сторонние библиотеки
 	foreach (prop
@@ -640,6 +688,11 @@ function(AddTarget)
 			WIN_NEED_PROTECTION	     "${ARG_NEED_PROTECTION}"
 		)
 	endif()
+	if(ARG_CXX_STANDARD)
+		set_target_properties(${ARG_NAME} PROPERTIES
+			CXX_STANDARD ${ARG_CXX_STANDARD}
+		)
+	endif()
 
 	if (publicIncludes)
 		target_include_directories(${ARG_NAME} PUBLIC ${publicIncludes})
@@ -671,19 +724,28 @@ function(AddTarget)
 			PRODUCT_NAME_VERSIONED            # навзание продукта с номером версии включительно
 			PRODUCT_VERSION_MAJOR             # старшая версия продукта
 			PRODUCT_VERSION_MINOR             # младшая версия продукта
-			SCRIPT_HELPERS_DIR                # путь расположения директории .../helpers
-			COPYRIGHT_YEAR                    # год регистрации авторского права
+			BUILDSCRIPTS_HELPERS_DIR          # путь расположения директории .../buildscripts/scripts/helpers
+			MOVAVI_COPYRIGHT_YEAR             # год регистрации авторского права
 			ARG_WIN_APP_ICON                  # путь расположения иконки инсталляции
 			TARGET_OUTPUT_NAME                # наименование исполняемого файла
 		)
 
 		set(APP_ICON ${ARG_WIN_APP_ICON})
-		set(rc_file_name "win_resources.rc")
-		configure_file(${SCRIPT_HELPERS_DIR}/win/${rc_file_name}.in ${ARG_NAME}/${rc_file_name})
+		set(RC_FILE_NAME "win_resources.rc")
+		set(RESOURCE_PATH ${BUILDSCRIPTS_HELPERS_DIR}/win/${RC_FILE_NAME}.in)
+
+		if(ARG_WIN_RESOURCE_PATH)
+			set(RESOURCE_PATH "${ARG_WIN_RESOURCE_PATH}")
+			if(NOT IS_ABSOLUTE ${RESOURCE_PATH})
+				set(RESOURCE_PATH "${ARG_SOURCE_DIR}/${RESOURCE_PATH}")
+			endif()
+		endif()
+
+		configure_file(${RESOURCE_PATH} ${ARG_NAME}/${RC_FILE_NAME})
 	endif()
 
 	set(appTypesEntitlements app_bundle app)
-	if(APPLE AND MAC_APP_STORE AND ARG_TYPE IN_LIST appTypesEntitlements)
+	if(APPLE AND MOVAVI_MAC_APP_STORE AND ARG_TYPE IN_LIST appTypesEntitlements)
 		# Appstore требует указания entitlements
 		CheckNonEmptyVariable(ARG_ENTITLEMENTS "${ARG_NAME}: appstore requirement for (${appTypesEntitlements}) target types")
 	endif()
@@ -718,7 +780,7 @@ function(AddTarget)
 			file(REMOVE ${BIN_DIR}/${configFile})
 
 			set(configFileFullPath)
-			find_file(configFileFullPath ${configFile} PATHS ${CONFIG_SEARCH_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
+			find_file(configFileFullPath ${configFile} PATHS ${MOVAVI_CONFIG_SEARCH_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
 			append(${ARG_NAME}_INSTALL_CONFIGS ${configFileFullPath})
 			unset(configFileFullPath CACHE)
 
@@ -744,4 +806,31 @@ function(AddTarget)
 		append_unique(PREPARE_WORKSPACE_FILES ${allWorkspaceFiles})
 	endif()
 	set( PREPARE_WORKSPACE_FILES ${PREPARE_WORKSPACE_FILES} CACHE INTERNAL "" FORCE)
+endfunction()
+
+# Генерация заглушки для библиотеки со всеми хедерами из директории.
+# headerDirectory - директория с хедерами (будут извлечены рекурсивно все файлы)
+# stubFilename - путь к сгенерированному файлу
+# дополнительные параметры позволяют задать регулярные выражения для филтра исходников
+# использование:
+# GenerateStubCpp(${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_BINARY_DIR}/Lib_Stub.cpp "unit_tests")
+function(GenerateStubCpp headerDirectory stubFilename)
+	file(GLOB_RECURSE files ${headerDirectory}/*.h) # RELATIVE не используем из-за filterSources
+	filterSources(files ${ARGN})
+	set(STUB_DATA)
+	foreach(file ${files})
+		string(REPLACE "${headerDirectory}/" "" file "${file}")
+		set(STUB_DATA "${STUB_DATA}#include \"${file}\"\n")
+	endforeach()
+	configure_file(${BUILDSCRIPTS_HELPERS_DIR}/Stub.h.in ${stubFilename})
+endfunction()
+
+# Компоновка дополнительных библиотек, с учетом дальнейшего фиксапа в цель
+# Использование: MovaviTargetLinkLibraries(SomeTarget target1 target2 target3)
+function(MovaviTargetLinkLibraries TargetName)
+	set(linkLibraries ${ARGN})
+	target_link_libraries(${TargetName} LINK_PRIVATE ${linkLibraries})
+	get_target_property(targets ${TargetName} LINK_TARGETS)
+	append(targets ${linkLibraries})
+	set_target_properties(${TargetName} PROPERTIES LINK_TARGETS "${targets}")
 endfunction()
