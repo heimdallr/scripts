@@ -159,7 +159,7 @@ function(postTarget TARGET_NAME)
 	endif()
 
 	# по дефолту всегда генерим PDB в Release.
-	if (MSVC AND NOT (TargetType STREQUAL "STATIC") AND NOT MOVAVI_WIN_DISABLE_RELEASE_PDB AND NOT ARG_NO_DEBUG_SYMBOLS)
+	if (MSVC AND NOT (TargetType STREQUAL "STATIC") AND NOT ARG_NO_DEBUG_SYMBOLS)
 		set_target_properties( ${ARG_NAME} PROPERTIES LINK_FLAGS_RELEASE " /DEBUG " )
 	endif()
 endfunction()
@@ -392,7 +392,7 @@ function(AddTarget)
 	set(__one_val_required
 		NAME                # Имя цели, обязательно
 		TYPE                # Тип цели shared_lib|static_lib|app|app_bundle|app_console|header_only
-		SOURCE_DIR          # Путь к папке с исходниками, относительно корня Movavi
+		SOURCE_DIR          # Путь к папке с исходниками
 		)
 	set(__one_val_optional
 		PROJECT_GROUP       # Группа проекта, может быть составной "Proc/Codec"
@@ -725,7 +725,7 @@ function(AddTarget)
 			PRODUCT_VERSION_MAJOR             # старшая версия продукта
 			PRODUCT_VERSION_MINOR             # младшая версия продукта
 			BUILDSCRIPTS_HELPERS_DIR          # путь расположения директории .../buildscripts/scripts/helpers
-			MOVAVI_COPYRIGHT_YEAR             # год регистрации авторского права
+			COPYRIGHT_YEAR                    # год регистрации авторского права
 			ARG_WIN_APP_ICON                  # путь расположения иконки инсталляции
 			TARGET_OUTPUT_NAME                # наименование исполняемого файла
 		)
@@ -745,10 +745,6 @@ function(AddTarget)
 	endif()
 
 	set(appTypesEntitlements app_bundle app)
-	if(APPLE AND MOVAVI_MAC_APP_STORE AND ARG_TYPE IN_LIST appTypesEntitlements)
-		# Appstore требует указания entitlements
-		CheckNonEmptyVariable(ARG_ENTITLEMENTS "${ARG_NAME}: appstore requirement for (${appTypesEntitlements}) target types")
-	endif()
 
 	if(APPLE AND ${ARG_TYPE} STREQUAL app_bundle)
 		# Configure bundle
@@ -780,7 +776,7 @@ function(AddTarget)
 			file(REMOVE ${BIN_DIR}/${configFile})
 
 			set(configFileFullPath)
-			find_file(configFileFullPath ${configFile} PATHS ${MOVAVI_CONFIG_SEARCH_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
+			find_file(configFileFullPath ${configFile} PATHS ${CONFIG_SEARCH_DIR} NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
 			append(${ARG_NAME}_INSTALL_CONFIGS ${configFileFullPath})
 			unset(configFileFullPath CACHE)
 
@@ -826,8 +822,8 @@ function(GenerateStubCpp headerDirectory stubFilename)
 endfunction()
 
 # Компоновка дополнительных библиотек, с учетом дальнейшего фиксапа в цель
-# Использование: MovaviTargetLinkLibraries(SomeTarget target1 target2 target3)
-function(MovaviTargetLinkLibraries TargetName)
+# Использование: TargetLinkLibraries(SomeTarget target1 target2 target3)
+function(TargetLinkLibraries TargetName)
 	set(linkLibraries ${ARGN})
 	target_link_libraries(${TargetName} LINK_PRIVATE ${linkLibraries})
 	get_target_property(targets ${TargetName} LINK_TARGETS)

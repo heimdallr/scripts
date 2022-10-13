@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 AddAuxiliaryTarget(GeneratedUiFiles)
 
-# Вспомогательная функция для QT_WRAP_UI_MOVAVI - записывает в "глобальный" список все ui_ хедеры, которые были сгенерированы.
+# Вспомогательная функция для QT_WRAP_UI_CUSTOM - записывает в "глобальный" список все ui_ хедеры, которые были сгенерированы.
 function(storeGeneratedUiHeaders)
 	get_target_property(headers GeneratedUiFiles UI_HEADERS)
 	if (NOT headers)
@@ -14,11 +14,11 @@ function(storeGeneratedUiHeaders)
 	endif()
 endfunction()
 
-# QT_WRAP_UI_MOVAVI(outfiles extraIncludes extraPostprocess inputfile1 inputfile2 ... )
+# QT_WRAP_UI_CUSTOM(outfiles extraIncludes extraPostprocess inputfile1 inputfile2 ... )
 # Функция предназначена для обертки Ui файлов.
 # В отличии от оригинального QT5_WRAP_UI, кладёт сгенерированные ui_*.h файлы
 # в отдельную папку, как у moc файлов, и автоматически дополняет extraIncludes необходимыми путями.
-function(QT_WRAP_UI_MOVAVI outfiles extraIncludes extraPostprocess)
+function(QT_WRAP_UI_CUSTOM outfiles extraIncludes extraPostprocess)
 	if(WARN_DISABLE_DEPRECATED)
 		set(_QT5_INTERNAL_SCOPE ON) # @todo Workaround
 	endif()
@@ -57,7 +57,7 @@ function(QT_WRAP_UI_MOVAVI outfiles extraIncludes extraPostprocess)
 	set(${extraIncludes} ${includes} PARENT_SCOPE)
 endfunction()
 
-# Функция удаляет из сборочной директории все файлы ui_*.h которые не были добавлены с помощью QT_WRAP_UI_MOVAVI.
+# Функция удаляет из сборочной директории все файлы ui_*.h которые не были добавлены с помощью QT_WRAP_UI_CUSTOM.
 #
 # Использование - просто добавьте вызов CleanupObsoleteUiHeaders() в конце CMakeLists.txt.
 function(CleanupObsoleteUiHeaders)
@@ -76,9 +76,9 @@ endfunction()
 
 # Макрос взят из Qt5CoreMacros.cmake и дополнен параметром isBinary, позволяющим добавлять в проекты бинарную сборку rcc файлов,
 # а не только формирование cxx из ресурсов и включение их в модуль.
-# QT_ADD_RESOURCES_MOVAVI(TRUE dst path/to/file.qrc) - file.qrc будет добавлен в dst, и будет собран в ${BIN_DIR}/resources/themes/${theme}/file.rcc
-# QT_ADD_RESOURCES_MOVAVI(FALSE dst path/to/file.qrc) - file.qrc будет добавлен в dst, и будет влинкован в модуль, зависящий от dst.
-function(QT_ADD_RESOURCES_MOVAVI isBinary outfiles )
+# QT_ADD_RESOURCES_CUSTOM(TRUE dst path/to/file.qrc) - file.qrc будет добавлен в dst, и будет собран в ${BIN_DIR}/resources/themes/${theme}/file.rcc
+# QT_ADD_RESOURCES_CUSTOM(FALSE dst path/to/file.qrc) - file.qrc будет добавлен в dst, и будет влинкован в модуль, зависящий от dst.
+function(QT_ADD_RESOURCES_CUSTOM isBinary outfiles )
 	if(WARN_DISABLE_DEPRECATED)
 		set(_QT5_INTERNAL_SCOPE ON) # @todo Workaround
 	endif()
@@ -144,7 +144,7 @@ function(QT_ADD_RESOURCES_MOVAVI isBinary outfiles )
 	set(${outfiles} ${${outfiles}} PARENT_SCOPE)
 endfunction()
 
-function(QT5_WRAP_CPP_MOVAVI outfiles hasDesigner mocIncludes)
+function(QT5_WRAP_CPP_CUSTOM outfiles hasDesigner mocIncludes)
 	if(WARN_DISABLE_DEPRECATED)
 		set(_QT5_INTERNAL_SCOPE ON) # @todo Workaround
 	endif()
@@ -170,10 +170,10 @@ endfunction()
 # в переменную mocFiles будут помещены MOC-файлы
 function(preTargetQt hasDesigner mocIncludes uiPostprocess outFilesName outUiFilesName extraIncludes mocFiles)
 
-		QT5_WRAP_CPP_MOVAVI(CURRENT_SOURCES_MOC "${hasDesigner}" "${mocIncludes}" ${CURRENT_HEADERS})
+		QT5_WRAP_CPP_CUSTOM(CURRENT_SOURCES_MOC "${hasDesigner}" "${mocIncludes}" ${CURRENT_HEADERS})
 
-		QT_WRAP_UI_MOVAVI(CURRENT_SOURCES_UI extraUiIncludes "${uiPostprocess}" ${CURRENT_FORMS} )
-		QT_ADD_RESOURCES_MOVAVI(FALSE CURRENT_SOURCES_RCC ${CURRENT_RESOURCES})
+		QT_WRAP_UI_CUSTOM(CURRENT_SOURCES_UI extraUiIncludes "${uiPostprocess}" ${CURRENT_FORMS} )
+		QT_ADD_RESOURCES_CUSTOM(FALSE CURRENT_SOURCES_RCC ${CURRENT_RESOURCES})
 
 		if( APPLE )
 			# Поочему то на винде с этими файлами студия не может прочитать сгенерированные Qt проекты: An item with the same key has already been added

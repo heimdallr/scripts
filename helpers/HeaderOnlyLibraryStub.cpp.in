@@ -1,6 +1,6 @@
 /// Generated from helpers/HeaderOnlyLibraryStub.cpp.in
 
-namespace Movavi {
+namespace HomeCompa {
 
 [[maybe_unused]] void StubFor@ARG_NAME@() {}
 
