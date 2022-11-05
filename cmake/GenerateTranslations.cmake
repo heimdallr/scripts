@@ -16,7 +16,7 @@ function(GenerateTranslations)
 	list(APPEND locale_names "}\;\n\n}\n")
 	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.tslist" ${ts})
 	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.h" ${locale_names})
-	execute_process(COMMAND ${LUPDATE_TOOL} "${ARG_PATH}/src" "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.h" -ts "@${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.tslist")
+	execute_process(COMMAND ${LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}/src" "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.h" -ts "@${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}.tslist")
 
 	set(qrc "<RCC>\n")
 	list(APPEND qrc "\t<qresource prefix=\"resources\">\n")
