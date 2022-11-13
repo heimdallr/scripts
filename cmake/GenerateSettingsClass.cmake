@@ -39,11 +39,19 @@ function(GenerateSettingsClass CLASS_NAME SETTINGS_MAP)
 	list(APPEND content "\tPropagateConstPtr<Settings> m_settings\;\n")
 	list(APPEND content "}\;\n\n")
 	list(APPEND content "}\n")
-	
+
 	set(headerFileQt "${CMAKE_CURRENT_BINARY_DIR}/Settings/${CLASS_NAME}.h")
 	set(headerFileMoc "${CMAKE_CURRENT_BINARY_DIR}/Settings/moc_${CLASS_NAME}.cpp")
-	
-	file(WRITE ${headerFileQt} ${content})
 
+	file(WRITE ${headerFileQt} ${content})
 	execute_process(COMMAND ${CMAKE_COMMAND} -DINFILE=${headerFileQt} -DOUTFILE=${headerFileMoc} -P ${CMAKE_BINARY_DIR}/MocWrapper.cmake  COMMAND_ERROR_IS_FATAL ANY)
+
+	set(keyConstants "#pragma once\n\n")
+	list(APPEND keyConstants "namespace HomeCompa::Constant::${CLASS_NAME}_ns {\n\n")
+	foreach(name ${keys})
+		list(APPEND keyConstants "constexpr auto ${name} = \"${name}\"\;\n")
+	endforeach()
+	list(APPEND keyConstants "\n}\n")
+	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Settings/${CLASS_NAME}_keys.h" ${keyConstants})
+
 endfunction()
