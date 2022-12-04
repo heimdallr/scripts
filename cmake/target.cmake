@@ -725,14 +725,13 @@ function(AddTarget)
 			PRODUCT_VERSION_MAJOR             # старшая версия продукта
 			PRODUCT_VERSION_MINOR             # младшая версия продукта
 			BUILDSCRIPTS_HELPERS_DIR          # путь расположения директории .../buildscripts/scripts/helpers
-			COPYRIGHT_YEAR                    # год регистрации авторского права
 			ARG_WIN_APP_ICON                  # путь расположения иконки инсталляции
 			TARGET_OUTPUT_NAME                # наименование исполняемого файла
 		)
 
 		set(APP_ICON ${ARG_WIN_APP_ICON})
 		set(RC_FILE_NAME "win_resources.rc")
-		set(RESOURCE_PATH ${BUILDSCRIPTS_HELPERS_DIR}/win/${RC_FILE_NAME}.in)
+		set(RESOURCE_PATH ${BUILDSCRIPTS_HELPERS_DIR}/${RC_FILE_NAME}.in)
 
 		if(ARG_WIN_RESOURCE_PATH)
 			set(RESOURCE_PATH "${ARG_WIN_RESOURCE_PATH}")

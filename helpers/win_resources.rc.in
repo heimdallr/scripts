@@ -1,0 +1,53 @@
+// Microsoft Visual C++ generated resource script.
+//
+
+#include <winver.h>
+#include <windows.h>
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "${APP_ICON}"
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION ${PRODUCT_VERSION_MAJOR},${PRODUCT_VERSION_MINOR_COMMA},0
+ PRODUCTVERSION ${PRODUCT_VERSION_MAJOR},${PRODUCT_VERSION_MINOR_COMMA},0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000904b0"
+        BEGIN
+            VALUE "CompanyName", "${ORGANIZATION_NAME}"
+            VALUE "FileDescription", "${PRODUCT_NAME_FILE_DESCRIPTION}"
+            VALUE "FileVersion", "${PRODUCT_VERSION_MAJOR}.${PRODUCT_VERSION_MINOR}.0"
+            VALUE "InternalName", "${ORGANIZATION_NAME} ${PRODUCT_NAME}"
+            VALUE "OriginalFilename", "${TARGET_OUTPUT_NAME}.exe"
+            VALUE "ProductName", "${ORGANIZATION_NAME} ${PRODUCT_NAME_VERSIONED}"
+            VALUE "ProductVersion", "${PRODUCT_VERSION_MAJOR}.${PRODUCT_VERSION_MINOR}.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x9, 1200
+    END
+END
+/////////////////////////////////////////////////////////////////////////////
