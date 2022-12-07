@@ -411,6 +411,7 @@ function(AddTarget)
 		COMPILE_DEFINITIONS          # дополнительные дефайны препроцессора (без -D)
 		EXCLUDE_SOURCES              # регулярное выражение для исключения исходников. E.g. "blabla\\.(cpp|h)"
 		INCLUDE_DIRS                 # Дополнительные include
+		INCLUDE_LIB_DIRS             # Дополнительные пути для библиотек
 		RESOURCE_MODULES             # Зависимые модули ресурсов
 		RESOURCE_PACKAGES            # Пакеты дополнительных ресурсов, объявленные при помощи RegisterResource
 		REMOTE_RESOURCE_PACKAGES     # Пакеты дополнительных удалённых ресурсов, объявленные при помощи RegisterRemoteResource
@@ -653,6 +654,8 @@ function(AddTarget)
 	if( ARG_LINK_FLAGS )
 		append( EXTRA_LINK_FLAGS ${ARG_LINK_FLAGS} )
 	endif()
+
+	append(EXTRA_LINK_DIRECTORIES ${ARG_INCLUDE_LIB_DIRS})
 
 	postTarget( ${ARG_NAME} )
 
