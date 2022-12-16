@@ -3,14 +3,6 @@ include_guard(GLOBAL)
 include(CMakeParseArguments)
 
 set(CMAKE_DEBUG_POSTFIX "D")
-set(BUILDSCRIPTS_HELPERS_DIR "${CMAKE_CURRENT_LIST_DIR}/../helpers")
-include(${CMAKE_CURRENT_LIST_DIR}/thirdparty/qt/qt_macro.cmake)
-#include(${CMAKE_CURRENT_LIST_DIR}/resources/locales.cmake)
-#include(${CMAKE_CURRENT_LIST_DIR}/resources/themes.cmake)
-#include(${CMAKE_CURRENT_LIST_DIR}/resources/resources.cmake)
-#include(${CMAKE_CURRENT_LIST_DIR}/resources/remote_resources)
-include("${CMAKE_CURRENT_LIST_DIR}/thirdparty/ThirdpartyModule.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/thirdparty/qt/qt.cmake")
 
 #################################################
 # Вспомогательные функции/макросы для AddTarget #

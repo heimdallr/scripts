@@ -510,3 +510,177 @@ endmacro()
 function(AddAuxiliaryTarget name)
 	add_library(${name} STATIC IMPORTED GLOBAL)
 endfunction()
+
+function(LinkSdkLibraryForConfig)
+	set(__options
+		APPEND_LIBPATH		# добавляет путь к корневой директории библиотек в EXTRA_LINK_DIRECTORIES
+		DEBUG_SEPARATED
+	)
+	set(__one_val_required
+		PACKAGE_NAME        # идентификатор пакета
+		CONFIG              # RELEASE | DEBUG
+		PKG_ROOT            # абсолютный путь к корню пакета, содержащему "lib" директорию
+		TARGET_NAME         # имя интерфейсной цели
+		)
+	set(__one_val_optional
+		SUFFIX
+		)
+	set(__multi_val
+		LIBS				# список имен библиотек, которые будут искаться. Имена передаются в find_library.
+		DLLS				# список имен dll, для копирования в workspace. pdb-файлы будут найдены исходя из этого списка.
+	)
+	ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
+	
+	set(config ${ARG_CONFIG})
+	set(libpath "${ARG_PKG_ROOT}/lib")
+	if (NOT EXISTS "${libpath}")
+		message(FATAL_ERROR "failed to locate extracted path for: ${libpath}")
+		return()
+	endif()
+
+	if (ARG_DEBUG_SEPARATED)
+		if (config STREQUAL "RELEASE")
+			set(libpath ${libpath}/Release)
+		else()
+			set(libpath ${libpath}/Debug)
+		endif()
+	endif()
+	set(suffix ${ARG_SUFFIX})
+	set(package ${ARG_PACKAGE_NAME})
+	set(libs)
+
+	foreach (lib ${ARG_LIBS})
+		append(libs ${lib}${suffix})
+	endforeach()
+	set(searchFlags NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
+
+	# небольшое примечание: функция find_library всегда кеширует результат поиска, даже если изменились его аргументы (кроме имени).
+	# таким образом, если не меняется версия библиотеки, и ключ "__LIB_${package}_${lib}_${config}" дает то же самое значение,
+	# изменение компоновки пакета с динамической на статическую, например, не приведет автоматически к новому имени библиотеки без сброса кеша CMake.
+	
+	GetTargetPropertyEmptyOnNonFound(EXTRA_LINK_LIBRARIES_${config}     ${ARG_TARGET_NAME} EXTRA_LINK_LIBRARIES_${config})
+	GetTargetPropertyEmptyOnNonFound(EXTRA_PLUGINS_${config}            ${ARG_TARGET_NAME} EXTRA_PLUGINS_${config})
+	set(linkLibraries)
+	foreach (lib ${libs})
+		set(libKey SDK_LIB_${package}_${lib}_${config})
+		find_library(${libKey} ${lib} PATHS ${libpath} ${searchFlags})
+		if (NOT ${libKey}) # -NOT-FOUND тоже считается за false.
+			message(SEND_ERROR "${libKey} is ${${libKey}}")
+		endif()
+		append(linkLibraries "${${libKey}}")
+		mark_as_advanced(${libKey})
+	endforeach()
+
+	# здесь подразумевается, что pdb файлы не могут быть в сборке статичной библиотеки, что формально неверно.
+	if (WIN32)
+		foreach (dll ${ARG_DLLS})
+			append(EXTRA_PLUGINS_${config} "${libpath}/${dll}${suffix}.dll")
+			set (pdb "${libpath}/${dll}${suffix}.pdb")
+			if (EXISTS ${pdb})
+				append(EXTRA_PLUGINS_${config} ${pdb})
+			endif()
+		endforeach()
+	else()
+		foreach (lib ${ARG_LIBS})
+			append( EXTRA_PLUGINS_${config} "${libpath}/${lib}${suffix}.so")
+		endforeach()
+	endif()
+
+	# Если библиотека состоит из динамических модулей, например, dylib или so, мы их должны включать в инсталлятор при линковке модуля.
+	# для этого файлы помещаются в секцию PLUGINS так же.
+	# под WIN - dll помещаются в секцию PLUGINS, а библиотеки импорта (lib) - в EXTRA_LINK_LIBRARIES (их только компонуем, никуда не устанавливаем)
+
+	if (NOT WIN32)
+		append(EXTRA_PLUGINS_${config} ${linkLibraries})
+		if (APPLE)
+			list(FILTER EXTRA_PLUGINS_${config} INCLUDE REGEX "\\.dylib")
+		elseif(LINUX)
+			list(FILTER EXTRA_PLUGINS_${config} INCLUDE REGEX "\\.so")
+		endif()
+	endif()
+	append(EXTRA_LINK_LIBRARIES_${config} ${linkLibraries})
+
+	set_target_properties(${ARG_TARGET_NAME} PROPERTIES
+		EXTRA_LINK_LIBRARIES_${config}      "${EXTRA_LINK_LIBRARIES_${config}}"
+		EXTRA_PLUGINS_${config}             "${EXTRA_PLUGINS_${config}}"
+		)
+
+	# по умолчанию мы всегда стремимся линковать файл библиотеки напрямую (так быстрее). Но для платформенных SDK, такой путь порой просто не работает -
+	# приходится передавать директорию для компоновки. Нужно стараться свести к минимуму LINK_DIRECTORIES.
+	if (ARG_APPEND_LIBPATH)
+		set_target_properties(${ARG_TARGET_NAME} PROPERTIES EXTRA_LINK_DIRECTORIES "${libpath}")
+	endif()
+endfunction()
+
+#подключает в качестве зависимости библиотеку из SDK, заполняя переменные
+# EXTRA_LINK_LIBRARIES*, EXTRA_WORKSPACE_FILES, EXTRA_LINK_DIRECTORIES
+# пример использования:
+# set(__libs SomeLibName)
+# set(_pkg_full libNameWithAbiAndVersion-1.0.0-win-x86-lib) # полное имя пакета для библиотеки.
+# LinkSdkLibrary(${_pkg_full} LIBS ${__libs} DLLS ${__libs} APPEND_LIBPATH)
+#
+function(LinkSdkLibrary package)
+	set(__options
+		APPEND_LIBPATH		# добавляет путь к корневой директории библиотек в EXTRA_LINK_DIRECTORIES
+		HAS_DEBUG
+		DEBUG_SEPARATED
+		ROOTS_SEPARATED     # отдельные корни для ROOT_DEBUG/ROOT_RELEASE
+	)
+	set(__one_val
+		TARGET_NAME         # имя интерфейсной цели
+		DEBUG_SUFFIX
+		)
+	set(__multi_val
+		LIBS				# список имен библиотек, которые будут искаться. Имена передаются в find_library.
+		DLLS				# список имен dll, для копирования в workspace. pdb-файлы будут найдены исходя из этого списка.
+	)
+	set(ARGN_EXPANDED ${ARGN})
+	ExpandListConditions(ARGN_EXPANDED)
+
+	cmake_parse_arguments(ARG "${__options}" "${__one_val}" "${__multi_val}" ${ARGN_EXPANDED})
+	if (NOT ${package}_ROOT)
+		message(FATAL_ERROR "${package}: Could not find suitable package - ${package}_ROOT=${${package}_ROOT}")
+		return()
+	endif()
+
+	foreach (config RELEASE DEBUG)
+		if (CMAKE_BUILD_TYPE)
+			if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+				if (config STREQUAL "RELEASE")
+					continue()
+				endif()
+			else() # Release, RelWithDeb, ...
+				if (config STREQUAL "DEBUG")
+					continue()
+				endif()
+			endif()
+		endif()
+		set(args)
+		if (ARG_APPEND_LIBPATH)
+			append(args APPEND_LIBPATH)
+		endif()
+		if (ARG_DEBUG_SEPARATED)
+			append(args DEBUG_SEPARATED)
+		endif()
+		append(args
+			PACKAGE_NAME  ${package}
+			CONFIG        ${config}
+			)
+		if (ARG_ROOTS_SEPARATED)
+			append(args PKG_ROOT  ${${package}_ROOT_${config}})
+		else()
+			append(args PKG_ROOT  ${${package}_ROOT})
+		endif()
+		append(args
+			TARGET_NAME   ${ARG_TARGET_NAME}
+			)
+		if (ARG_DEBUG_SUFFIX AND config STREQUAL "DEBUG")
+			append(args SUFFIX ${ARG_DEBUG_SUFFIX})
+		endif()
+		append(args
+			LIBS ${ARG_LIBS}
+			DLLS ${ARG_DLLS}
+			)
+		LinkSdkLibraryForConfig(${args})
+	endforeach()
+endfunction()

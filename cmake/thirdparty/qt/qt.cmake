@@ -1,4 +1,6 @@
-set(QT_ROOT_PATH "C:/.conan/2bc73b/1")
+set(QT_ROOT_PATH $ENV{QT_DIR_64})
+string(REPLACE "\\" "/" QT_ROOT_PATH ${QT_ROOT_PATH})
+
 set(LRELEASE_TOOL "${QT_ROOT_PATH}/bin/lrelease")
 set(LUPDATE_TOOL "${QT_ROOT_PATH}/bin/lupdate")
 
@@ -29,6 +31,9 @@ set(qt5Modules
 	QuickTemplates2
 	QuickWidgets
 	)
+
+include(${CMAKE_CURRENT_LIST_DIR}/qt_macro.cmake)
+
 if(APPLE)
 	append_unique(qt5Modules MacExtras DBus) # DBus нужен для qcocoa.
 endif()
