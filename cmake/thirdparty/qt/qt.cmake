@@ -1,4 +1,4 @@
-set(QT_ROOT_PATH $ENV{QT_DIR_64})
+set(QT_ROOT_PATH $ENV{QT_DIR64})
 string(REPLACE "\\" "/" QT_ROOT_PATH ${QT_ROOT_PATH})
 
 set(LRELEASE_TOOL "${QT_ROOT_PATH}/bin/lrelease")
