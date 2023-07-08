@@ -1,10 +1,10 @@
 set(MOC_BINARY "@QT_MOC_EXECUTABLE@")
-set(Qt5Designer_INCLUDE_DIRS @Qt5Designer_INCLUDE_DIRS@)
+set(Qt6Designer_INCLUDE_DIRS @Qt6Designer_INCLUDE_DIRS@)
 set(moc_options)
 if(HAS_DESIGNER)
 	#moc не получает по умолчанию additional includes, что, в принципе, нормально
 	#но только не в случае со сборкой плагинов. Потому для проектов, зависимых от дизайнера инклуды пропихиваем дополнительно.
-	foreach (dir ${Qt5Designer_INCLUDE_DIRS})
+	foreach (dir ${Qt6Designer_INCLUDE_DIRS})
 		list(APPEND moc_options "-I${dir}")
 	endforeach()
 endif()
@@ -23,6 +23,7 @@ if(NOT contains_q_object_or_q_namespace)
 	file(WRITE ${OUTFILE} "")
 	return()
 endif()
+
 execute_process(
 	COMMAND ${MOC_BINARY} ${moc_flags} ${moc_options} -o "${OUTFILE}" "${INFILE}"
 	RESULT_VARIABLE result

@@ -1,10 +1,1 @@
-set(pkg quazip)
-
-AddThirdpartyModule(NAME ${pkg}
-	)
-
-set(quazip_ROOT "${CMAKE_CURRENT_BINARY_DIR}-thirdparty")
-
-LinkSdkLibrary(quazip TARGET_NAME ${pkg} LIBS ${pkg} DLLS ${pkg}
-	[ WIN32 HAS_DEBUG DEBUG_SUFFIX "d" ]
-	)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_MODULE_PATH})
