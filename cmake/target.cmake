@@ -105,6 +105,8 @@ function(AddTarget)
 		list(FILTER allFiles EXCLUDE REGEX ${exclude})
 	endforeach()
 	
+	set(CURRENT_CMAKES ${allFiles})
+	list(FILTER CURRENT_CMAKES INCLUDE REGEX "\\.cmake$")
 	set(CURRENT_HEADERS ${allFiles})
 	list(FILTER CURRENT_HEADERS INCLUDE REGEX "\\.(h|hpp)$")
 	set(CURRENT_SOURCES ${allFiles})
@@ -143,8 +145,7 @@ function(AddTarget)
 
 	makeSourceGroups()
 
-	set(ALL_SOURCES ${CURRENT_SOURCES} ${CURRENT_HEADERS} ${CURRENT_QML} ${CURRENT_FORMS} ${ARG_SOURCES} )
-	qt_add_resources(ALL_SOURCES ${CURRENT_RESOURCES})	
+	set(ALL_SOURCES ${CURRENT_SOURCES} ${CURRENT_HEADERS} ${CURRENT_QML} ${CURRENT_FORMS} ${CURRENT_CMAKES} ${ARG_SOURCES} )
 	
 	set( CreateTarget )
 	if(${ARG_TYPE} STREQUAL static_lib)
@@ -223,16 +224,18 @@ function(AddTarget)
 	endif()
 	
 	foreach (module ${ARG_MODULES})
-#		find_package(${module} REQUIRED)
 #		if (${module}_LIB_DEBUG)
 #			list(APPEND LIBS_DEBUG ${${module}_LIB_DEBUG})
 #		endif()
 #		if (${module}_LIB_RELEASE)
 #			list(APPEND LIBS_RELEASE ${${module}_LIB_RELEASE})
 #		endif()
-#		if (${module}_LIB)
-			list(APPEND ARG_LINK_TARGETS ${module})
-#		endif()
+		if (${module}_LIB)
+			list(APPEND ARG_LINK_TARGETS ${${module}_LIB})
+		endif()
+		if (${module}_INCLUDE_DIR)
+			list(APPEND ARG_INCLUDE_DIRS ${${module}_INCLUDE_DIR})
+		endif()	
 #		if (${module}_BIN_DIR)
 #			string(APPEND DEBUG_ENV ";${${module}_BIN_DIR}")
 #		endif()
@@ -240,22 +243,25 @@ function(AddTarget)
 
 	foreach (lib ${ARG_LINK_TARGETS})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE ${lib})
-		message(${lib})
 	endforeach()
 	
 	foreach (lib ${LIBS_DEBUG})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE debug ${lib})
-		message(${lib})
 	endforeach()
 	
 	foreach (lib ${LIBS_RELEASE})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE optimized ${lib})
-		message(${lib})
+	endforeach()
+
+	set(INCLUDE_DIRS_ABSOLUTE)
+	foreach(dir ${ARG_INCLUDE_DIRS})
+		GET_FILENAME_COMPONENT( FULLPATH ${dir} ABSOLUTE )
+		list(APPEND INCLUDE_DIRS_ABSOLUTE ${FULLPATH})
 	endforeach()
 	
 	target_include_directories(${ARG_NAME} PRIVATE 
 		"${ARG_SOURCE_DIR}"
-		${ARG_INCLUDE_DIRS}
+		${INCLUDE_DIRS_ABSOLUTE}
 		${CMAKE_CURRENT_BINARY_DIR}
 		${CMAKE_CURRENT_BINARY_DIR}/export
 		)
