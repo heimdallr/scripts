@@ -245,7 +245,11 @@ function(AddTarget)
 	foreach (lib ${ARG_LINK_TARGETS})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE ${lib})
 	endforeach()
-	
+
+	if( ARG_DEPENDENCIES )
+		add_dependencies( ${ARG_NAME} ${ARG_DEPENDENCIES})
+	endif()
+
 	foreach (lib ${LIBS_DEBUG})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE debug ${lib})
 	endforeach()
