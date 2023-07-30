@@ -3,33 +3,28 @@ include_guard(GLOBAL)
 function(GenerateTranslations)
 #	set(options )
 	set(oneValueArgs NAME PATH)
-	set(multiValueArgs LOCALES)
+	set(multiValueArgs FILES)
 	cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+	if (NOT ARG_FILES)
+		return()
+	endif()
 	
 	set(ts)
-	set(locale_names)
-	list(APPEND locale_names "#pragma once\n\nnamespace HomeCompa {\n\nconstexpr const char * LOCALES[]\n{\n")
-	foreach(locale ${ARG_LOCALES})
-		list(APPEND ts "${ARG_PATH}/resources/locales/${locale}.ts\n")
-		list(APPEND locale_names "\tQT_TRANSLATE_NOOP(\"Language\", \"${locale}\"),\n")
+	add_custom_command(TARGET ${ARG_NAME}
+	    PRE_BUILD
+	    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales
+	)
+	foreach(file ${ARG_FILES})
+		list(APPEND ts "${file}\n")
+		get_filename_component( locale ${file} NAME_WE )
+		add_custom_command(TARGET ${ARG_NAME}
+		    PRE_BUILD
+		    COMMAND ${QT_LRELEASE_TOOL} ${file} -qm ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales/${ARG_NAME}_${locale}.qm
+		)
 	endforeach()
-	list(APPEND locale_names "}\;\n\n}\n")
 
 	set(tslist "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}_locales.tslist")
-	set(locales_h "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}_locales.h")
-
 	file(WRITE ${tslist} ${ts})
-	file(WRITE ${locales_h} ${locale_names})
 
-	execute_process(COMMAND ${LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}/src" ${locales_h} -ts "@${tslist}")
-
-	set(qrc "<RCC>\n")
-	list(APPEND qrc "\t<qresource prefix=\"resources\">\n")
-	foreach(locale ${ARG_LOCALES})
-		list(APPEND qrc "\t\t<file alias=\"${locale}.qm\">${locale}.qm</file>\n")
-		execute_process(COMMAND ${LRELEASE_TOOL} "${ARG_PATH}/resources/locales/${locale}.ts" -qm "${CMAKE_CURRENT_BINARY_DIR}/Resources/${locale}.qm")
-	endforeach()
-	list(APPEND qrc "\t</qresource>\n")
-	list(APPEND qrc "</RCC>\n")
-	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}_qm.qrc" ${qrc})
+	execute_process(COMMAND ${QT_LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}" -ts "@${tslist}")
 endfunction()

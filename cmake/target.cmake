@@ -48,6 +48,11 @@ macro(makeSourceGroups)
 		GROUP_NAME "Forms"
 		FILES ${CURRENT_FORMS}
 	)
+	MakeSourceGroup(
+		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
+		GROUP_NAME "Resource Files/ts"
+		FILES ${CURRENT_TS}
+	)
 #	FOREACH(FILE ${CURRENT_RESOURCES} )
 #		GET_FILENAME_COMPONENT( FILE_NAME ${FILE} NAME )
 #		SOURCE_GROUP( "Resources" FILES ${FILE_NAME} )
@@ -116,6 +121,8 @@ function(AddTarget)
 		list(FILTER CURRENT_QML INCLUDE REGEX "\\.(qml|js)$")
 		set(CURRENT_FORMS ${allFiles})
 		list(FILTER CURRENT_FORMS INCLUDE REGEX "\\.ui$")
+		set(CURRENT_TS ${allFiles})
+		list(FILTER CURRENT_TS INCLUDE REGEX "\\.ts$")
 		set(CURRENT_RESOURCES ${allFiles})
 		list(FILTER CURRENT_RESOURCES INCLUDE REGEX "\\.(qrc)$")
 		if (ARG_FORMS)
@@ -146,7 +153,7 @@ function(AddTarget)
 	makeSourceGroups()
 
 	qt_add_resources(RSS_SOURCES ${CURRENT_RESOURCES})
-	set(ALL_SOURCES ${CURRENT_SOURCES} ${CURRENT_HEADERS} ${CURRENT_QML} ${CURRENT_FORMS} ${CURRENT_CMAKES} ${RSS_SOURCES} ${ARG_SOURCES} )
+	set(ALL_SOURCES ${CURRENT_SOURCES} ${CURRENT_HEADERS} ${CURRENT_QML} ${CURRENT_FORMS} ${CURRENT_TS} ${CURRENT_CMAKES} ${RSS_SOURCES} ${ARG_SOURCES} )
 	
 	set( CreateTarget )
 	if(${ARG_TYPE} STREQUAL static_lib)
@@ -263,6 +270,12 @@ function(AddTarget)
 		GET_FILENAME_COMPONENT( FULLPATH ${dir} ABSOLUTE )
 		list(APPEND INCLUDE_DIRS_ABSOLUTE ${FULLPATH})
 	endforeach()
+
+	GenerateTranslations(
+		NAME ${ARG_NAME}
+		PATH ${ARG_SOURCE_DIR}
+		FILES ${CURRENT_TS}
+	)
 	
 	target_include_directories(${ARG_NAME} PRIVATE 
 		"${ARG_SOURCE_DIR}"
