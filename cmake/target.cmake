@@ -105,6 +105,8 @@ function(AddTarget)
 	)
 	ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN} )
 	
+	message(STATUS "Add ${ARG_NAME}")
+	
 	file(GLOB_RECURSE allFiles "${ARG_SOURCE_DIR}/[^.]*" ) # Пропуск скрытых и исключённых файлов
 	foreach(exclude ${ARG_EXCLUDE_SOURCES})
 		list(FILTER allFiles EXCLUDE REGEX ${exclude})
@@ -221,14 +223,13 @@ function(AddTarget)
 
 	set(LIBS_DEBUG)
 	set(LIBS_RELEASE)
-	set(DEBUG_ENV "PATH=%PATH%")
 
 	if (ARG_QT_USE)
-		string(APPEND DEBUG_ENV ";${QT_BIN_DIR}")
 		foreach (module ${ARG_QT_USE})
 			find_package(Qt6 REQUIRED COMPONENTS ${module})
 			list(APPEND ARG_LINK_TARGETS Qt6::${module})
 		endforeach()
+		list(APPEND ARG_MODULES QT)
 	endif()
 	
 	foreach (module ${ARG_MODULES})
@@ -244,11 +245,13 @@ function(AddTarget)
 		if (${module}_INCLUDE_DIR)
 			list(APPEND ARG_INCLUDE_DIRS ${${module}_INCLUDE_DIR})
 		endif()	
-#		if (${module}_BIN_DIR)
-#			string(APPEND DEBUG_ENV ";${${module}_BIN_DIR}")
-#		endif()
+		if (${module}_BIN_DIR)
+			get_property(third_party_bin_dirs GLOBAL PROPERTY third_party_bin_dirs_property)
+			append_unique(third_party_bin_dirs ${${module}_BIN_DIR})
+			set_property(GLOBAL PROPERTY third_party_bin_dirs_property "${third_party_bin_dirs}")
+		endif()
 	endforeach()
-
+	
 	foreach (lib ${ARG_LINK_TARGETS})
 		target_link_libraries(${ARG_NAME} LINK_PRIVATE ${lib})
 	endforeach()
@@ -290,9 +293,5 @@ function(AddTarget)
 	if(ARG_CXX_STANDARD)
 		set_target_properties(${ARG_NAME} PROPERTIES CXX_STANDARD ${ARG_CXX_STANDARD})
 	endif()
-	
-	set_target_properties(${ARG_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "${DEBUG_ENV}")
-		
-#	Print(allFiles: ${allFiles})
 	
 endfunction()
