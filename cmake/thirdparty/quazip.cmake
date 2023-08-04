@@ -9,3 +9,5 @@ set(CMAKE_PREFIX_PATH "${quazip_ROOT}/lib/cmake/QuaZip-Qt6-1.4" ${CMAKE_PREFIX_P
 find_package(QuaZip-Qt6)
 set(quazip_LIB "QuaZip::QuaZip")
 set(quazip_BIN_DIR "${quazip_ROOT}/bin")
+
+AddBinDirectory(${quazip_BIN_DIR})
