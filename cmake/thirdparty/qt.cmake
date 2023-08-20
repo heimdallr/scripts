@@ -1,10 +1,4 @@
-set(ICU_ROOT_PATH $ENV{ICU_DIR})
-string(REPLACE "\\" "/" ICU_ROOT_PATH ${ICU_ROOT_PATH})
-set(ICU_BIN_PATH ${ICU_ROOT_PATH}/bin)
-set(ENV{PATH} "$ENV{PATH};${ICU_BIN_PATH}")
-AddBinDirectory(${ICU_BIN_PATH})
-
-set(QT_ROOT_PATH $ENV{QT_DIR})
+set(QT_ROOT_PATH $ENV{THIRDPARTY}/Qt/Qt6/6.6.0/msvc2019_64)
 string(REPLACE "\\" "/" QT_ROOT_PATH ${QT_ROOT_PATH})
 
 set(Qt6_DIR "${QT_ROOT_PATH}/lib/cmake/Qt6")
