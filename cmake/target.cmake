@@ -109,6 +109,8 @@ function(__AddTarget_CopyDependentLibraries target)
         if("${lib}" STREQUAL "Qt6::Core")
             get_target_property(plugin Qt6::QWindowsIntegrationPlugin IMPORTED_LOCATION_${CBTUP})
             file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/platforms)
+            get_target_property(plugin Qt6::QWindowsVistaStylePlugin IMPORTED_LOCATION_${CBTUP})
+            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/styles)
         endif()
 
         __AddTarget_CopyDependentLibraries(${lib})
