@@ -1,292 +1,268 @@
-﻿include_guard(GLOBAL)
+include_guard(GLOBAL)
 
-function(MakeSourceGroup)
-	set(__options)
-	set(__one_val_required
-		PROJECT_FULLPATH
-		GROUP_NAME
-		)
-	set(__one_val_optional)
-	set(__multi_val
-		FILES
-		)
-	ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN} )
+include(GenerateExportHeader)
+include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
 
-	FOREACH( FILE ${ARG_FILES} )
-		GET_FILENAME_COMPONENT( FULLPATH ${FILE} ABSOLUTE )
-		GET_FILENAME_COMPONENT( FILE_NAME ${FILE} NAME )
-		STRING( REPLACE ${FILE_NAME} "" FULLPATH "${FULLPATH}" )
-		STRING( REPLACE ${ARG_PROJECT_FULLPATH} "" RELATIVEPATH "${FULLPATH}" )
-		STRING( REPLACE "/" "\\" BACKSLASHEDPATH "${RELATIVEPATH}" )
-		SOURCE_GROUP( "${ARG_GROUP_NAME}${BACKSLASHEDPATH}" FILES ${FILE} )
-	ENDFOREACH()
-	
+function(AddTarget name type)
+    # name                      # Имя цели, обязательно
+    # type                      # Тип цели shared_lib|static_lib|app|app_bundle|app_console|header_only
+    set(__options
+            #QT                  # используется Qt
+            #NEED_PROTECTION     # таргет необходимо защищать (только для Win)
+            #EXPORT_INCLUDE      # выставлять текущую директорию цели как публичный include при её компоновке.
+            #STATIC_RUNTIME      # использовать static runtime (/MT) стандартной библиотеки (только MSVC)
+            #NO_DEBUG_SYMBOLS    # отключить создание PDB для цели (даже если они включены глобально)
+    )
+    set(__one_val_required
+
+    )
+    set(__one_val_optional
+            SOURCE_DIRECTORY     # Путь к папке с исходниками
+            PROJECT_GROUP       # Группа проекта, может быть составной "Proc/Codec"
+            #OUTPUT_NAME         # Задаёт выходное имя таргета
+            #OUTPUT_SUBDIRECTORY # Путь к папке относительно BIN_DIR
+            #BUNDLE_INFO_PLIST   # Путь к Info.plist для bundle
+            #BUNDLE_ICONS        # Путь к icns для bundle
+            #ENTITLEMENTS        # Entitlement с которыми будет подписан таргет для AppStore, либо для активации hardened runtime
+            #WIN_APP_ICON        # Путь до иконки приложения (win)
+            #WIN_RESOURCE_PATH   # Кастомный путь до win_resources.rc.in
+            #AMALGAMATION_MODE   # тип объединенной сборки. all|moc|none , all = все исходники объединяются, moc - только moc-файлы. По умолчанию - moc.
+            CXX_STANDARD        # версия С++. 17|20, по умолчанию 20.
+    )
+    set(__multi_val
+            COMPILER_OPTIONS             # дополнительные опции для компилятора
+            COMPILE_DEFINITIONS          # дополнительные дефайны препроцессора (без -D)
+            EXCLUDE_SOURCES              # регулярное выражение для исключения исходников. E.g. "blabla\\.(cpp|h)"
+            INCLUDE_DIRECTORIES          # Дополнительные include
+            LIBRARIES_DIRECTORIES        # Дополнительные пути для библиотек
+            #RESOURCE_MODULES             # Зависимые модули ресурсов
+            #RESOURCE_PACKAGES            # Пакеты дополнительных ресурсов, объявленные при помощи RegisterResource
+            #REMOTE_RESOURCE_PACKAGES     # Пакеты дополнительных удалённых ресурсов, объявленные при помощи RegisterRemoteResource
+
+            #QT_USE                       # используемые модули Qt.
+            #MACOS_FRAMEWORKS             # Фреймворки MacOS. E.g. IOKit
+
+            #MODULES                      # имена подключаемых 3rdparty-модулей. E.g. boost, OpenGLSupport, boost::filesystem, WinLicense, opencv::imgcodecs. Модули могут иметь зависимости - например, boost::filesystem еще и подключает хедеры.
+            LINK_TARGETS                 # зависимые цели для компоновки. E.g. CoreInt.
+            LINK_LIBRARIES               # дополнительные библиотеки для компоновк. E.g. [ WIN32 d3d.lib ]
+
+            #PLUGINS                      # Зависимости для сборки, которые будут использованы при фиксапе
+            #DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
+            #QT_PLUGINS			         # Плагины QT. Например: QWindowsAudio для импортируемой либы Qt5::QWindowsAudioPlugin (См. QT_DIR/lib/cmake/Qt5Multimedia)
+            #QT_QML_MODULES               # QML плагины
+            #QRC                          # Дополнительные *.qrc файлы с ресурсами, будут подключены и влинкованы в этот модуль
+            #FORMS                        # Дополнительные *.ui файлы
+            SOURCES                      # Дополнительные файлы с исходниками.
+            #LINK_FLAGS                   # Флаги компоновки
+            #MAC_XIB                      # Маковские  ui-файлы
+            #CONFIGS                      # Здесь указываются файлы конфигурирующие данное приложение (пресеты, ...)
+            #WIN_RC                       # Дополнительные *.rc файлы с виндовыми ресурсами, будут подключены и влинкованы в этот модуль
+            #REPO_DEPENDENCIES            # Зависимые репозитории (их NAME), которые будут добавлены в качестве INCLUDE_DIRS.
+            #UIC_POSTPROCESS_SCRIPTS      # Список файлов cmake, используемых как команды поспроцессинга UIC (вызываются после него)
+            PRECOMPILED_HEADERS          # Список прекомпилируемых хедеров
+    )
+    ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
+
+    __AddTarget_CreateTarget(${name} ${type})
+    __AddTarget_AddSources(${name} "${ARG_PROJECT_GROUP}" "${ARG_SOURCE_DIRECTORY}" "${ARG_EXCLUDE_SOURCES}" ${ARG_SOURCES})
+    __AddTarget_AddCompilerOptions(${name} ${ARG_COMPILER_OPTIONS})
+
+    target_compile_definitions(${name} PRIVATE ${ARG_COMPILE_DEFINITIONS})
+
+    target_include_directories(${name} PRIVATE ${ARG_INCLUDE_DIRECTORIES})
+    if (ARG_SOURCE_DIRECTORY)
+        target_include_directories(${name} PRIVATE ${ARG_SOURCE_DIRECTORY})
+    endif ()
+
+    target_precompile_headers(${name} PRIVATE ${ARG_PRECOMPILED_HEADERS})
+
+    target_link_directories(${name} PRIVATE ${ARG_LIBRARIES_DIRECTORIES})
+    target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_LIBRARIES})
+    __AddTarget_CopyDependentLibraries(${name}) # Быстрая оптимизация: после ARG_LINK_LIBRARIES, перед ARG_LINK_TARGETS.
+    target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_TARGETS})
 endfunction()
 
-#  Макрос составляет группы исходников аналогично их расположению на диске относительно директории
-# ARG_SOURCE_DIR. На входе имеет CURRENT_SOURCES, CURRENT_HEADERS, CURRENT_QML. Применимо для VS.
-macro(makeSourceGroups)
-	GET_FILENAME_COMPONENT( CURRENT_PROJECT_FULLPATH ${ARG_SOURCE_DIR} ABSOLUTE )
+function(__AddTarget_CopyDependentLibraries target)
+    # Реализация медленная, т.к. на каждый таргет приходится пробегаться по большому списку библиотек.
+    # Не на столько медленная, что бы сейчас оптимизировать. Для MaksN время конфигурирования выросло с 0.3c до 0.6c.
+    string(TOUPPER ${CMAKE_BUILD_TYPE} CBTUP)
 
-	MakeSourceGroup(
-		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
-		GROUP_NAME "Sources"
-		FILES ${CURRENT_SOURCES}
-	)
-	MakeSourceGroup(
-		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
-		GROUP_NAME "Headers"
-		FILES ${CURRENT_HEADERS}
-	)
-	MakeSourceGroup(
-		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
-		GROUP_NAME "QML"
-		FILES ${CURRENT_QML}
-	)
-	MakeSourceGroup(
-		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
-		GROUP_NAME "Forms"
-		FILES ${CURRENT_FORMS}
-	)
-	MakeSourceGroup(
-		PROJECT_FULLPATH ${CURRENT_PROJECT_FULLPATH}
-		GROUP_NAME "Resource Files/ts"
-		FILES ${CURRENT_TS}
-	)
-#	FOREACH(FILE ${CURRENT_RESOURCES} )
-#		GET_FILENAME_COMPONENT( FILE_NAME ${FILE} NAME )
-#		SOURCE_GROUP( "Resources" FILES ${FILE_NAME} )
-#	ENDFOREACH()
-endmacro()
+    get_target_property(libraries ${target} LINK_LIBRARIES)
+    get_target_property(libraries_int ${target} INTERFACE_LINK_LIBRARIES)
+    foreach(lib ${libraries})
+#message("${target} - ${lib}")
+    endforeach()
+    foreach(lib ${libraries} ${libraries_int})
+        if(NOT TARGET ${lib})
+            continue() # LINK_PUBLIC, LINK_PRIVATE, custom targets, etc.
+        endif()
 
-function(CreateExportLibFile target definition_name output_file)
-	set(TARGET ${target})
-	set(DEFINITION_NAME ${definition_name})
-	configure_file(${BUILDSCRIPTS_HELPERS_DIR}/ExportLib.h.in ${CMAKE_CURRENT_BINARY_DIR}/export/${output_file} @ONLY)
+        get_target_property(lib_location ${lib} IMPORTED_LOCATION_${CBTUP})
+#message(${target} - ${lib}: ${lib_location})
+        if(lib_location)
+            get_filename_component(ext ${lib_location} LAST_EXT)
+            if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
+                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} NO_SOURCE_PERMISSIONS)
+            endif()
+        endif()
+
+        if("${lib}" STREQUAL "Qt6::Core")
+            get_target_property(plugin Qt6::QWindowsIntegrationPlugin IMPORTED_LOCATION_${CBTUP})
+            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/platforms)
+        endif()
+
+        __AddTarget_CopyDependentLibraries(${lib})
+    endforeach()
 endfunction()
 
-# Создание новой цели
-function(AddTarget)
-	set(__options
-		STATIC_RUNTIME      # использовать static runtime (/MT) стандартной библиотеки (только MSVC)
-		)
-	set(__one_val_required
-		NAME                # Имя цели, обязательно
-		TYPE                # Тип цели shared_lib|static_lib|app|app_console|header_only
-		SOURCE_DIR          # Путь к папке с исходниками
-		)
-	set(__one_val_optional
-		PROJECT_GROUP       # Группа проекта, может быть составной "Proc/Codec"
-		OUTPUT_NAME         # Задаёт выходное имя таргета
-		WIN_APP_ICON        # Путь до иконки приложения (win)
-		CXX_STANDARD        # версия С++. 17|20.
-		)
-	set(__multi_val
-		COMPILER_OPTIONS             # дополнительные опции для компилятора
-		COMPILE_DEFINITIONS          # дополнительные дефайны препроцессора (без -D)
-		EXCLUDE_SOURCES              # регулярное выражение для исключения исходников. E.g. "blabla\\.(cpp|h)"
-		INCLUDE_DIRS                 # Дополнительные include
-		INCLUDE_LIB_DIRS             # Дополнительные пути для библиотек
-		RESOURCE_MODULES             # Зависимые модули ресурсов
-		RESOURCE_PACKAGES            # Пакеты дополнительных ресурсов, объявленные при помощи RegisterResource
-		MODULES                      # имена подключаемых 3rdparty-модулей. E.g. boost, OpenGLSupport, boost::filesystem, WinLicense, opencv::imgcodecs. Модули могут иметь зависимости - например, boost::filesystem еще и подключает хедеры.
-		QT_USE                       # используемые модули Qt.
-		LINK_TARGETS                 # зависимые цели для компоновки. E.g. CoreInt.
-		LINK_LIBRARIES               # дополнительные библиотеки для компоновк. E.g. [ WIN32 d3d.lib ]
-		DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
-		QT_PLUGINS			         # Плагины QT. Например: QWindowsAudio для импортируемой либы Qt6::QWindowsAudioPlugin (См. QT_DIR/lib/cmake/Qt5Multimedia)
-		QT_QML_MODULES               # QML плагины
-		QRC                          # Дополнительные *.qrc файлы с ресурсами, будут подключены и влинкованы в этот модуль
-		FORMS                        # Дополнительные *.ui файлы
-		SOURCES                      # Дополнительные файлы с исходниками.
-		LINK_FLAGS                   # Флаги компоновки
-		CONFIGS                      # Здесь указываются файлы конфигурирующие данное приложение (пресеты, ...)
-		WIN_RC                       # Дополнительные *.rc файлы с виндовыми ресурсами, будут подключены и влинкованы в этот модуль
-	)
-	ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN} )
-	
-	message(STATUS "Add ${ARG_NAME}")
-	
-	file(GLOB_RECURSE allFiles "${ARG_SOURCE_DIR}/[^.]*" ) # Пропуск скрытых и исключённых файлов
-	foreach(exclude ${ARG_EXCLUDE_SOURCES})
-		list(FILTER allFiles EXCLUDE REGEX ${exclude})
-	endforeach()
-	
-	set(CURRENT_CMAKES ${allFiles})
-	list(FILTER CURRENT_CMAKES INCLUDE REGEX "\\.cmake$")
-	set(CURRENT_HEADERS ${allFiles})
-	list(FILTER CURRENT_HEADERS INCLUDE REGEX "\\.(h|hpp)$")
-	set(CURRENT_SOURCES ${allFiles})
-	list(FILTER CURRENT_SOURCES INCLUDE REGEX "\\.(c|cc|cpp)$")
-	if(ARG_QT_USE)
-		set(CURRENT_QML ${allFiles})
-		list(FILTER CURRENT_QML INCLUDE REGEX "\\.(qml|js)$")
-		set(CURRENT_FORMS ${allFiles})
-		list(FILTER CURRENT_FORMS INCLUDE REGEX "\\.ui$")
-		set(CURRENT_TS ${allFiles})
-		list(FILTER CURRENT_TS INCLUDE REGEX "\\.ts$")
-		set(CURRENT_RESOURCES ${allFiles})
-		list(FILTER CURRENT_RESOURCES INCLUDE REGEX "\\.(qrc)$")
-		if (ARG_FORMS)
-			list(APPEND CURRENT_FORMS ${ARG_FORMS})
+function(__AddTarget_CreateTarget target type)
+
+    set(TargetType STATIC)
+    set(CreateTarget library)
+
+    if (${type} STREQUAL static_lib)
+    elseif (${type} STREQUAL header_only)
+    elseif (${type} STREQUAL shared_lib)
+        set(TargetType SHARED)
+    elseif (${type} STREQUAL app)
+        set(TargetType WIN32)
+        set(CreateTarget executable)
+    elseif (${type} STREQUAL app_console)
+        set(TargetType)
+        set(CreateTarget executable)
+    else ()
+        message(FATAL_ERROR "Unknown type TYPE: ${type}")
+    endif ()
+
+    if (CreateTarget STREQUAL library)
+        add_library(${target} ${TargetType})
+    elseif (CreateTarget STREQUAL executable)
+        add_executable(${target} ${TargetType})
+    endif ()
+
+    # Для shared_lib создаём файл экспорта
+    if (${type} STREQUAL shared_lib)
+        generate_export_header(${target})
+        target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    endif ()
+endfunction()
+
+function(__AddTarget_AddSources target project_group source_directory exclude_sources) # ARGN - list extended sources
+    if (NOT source_directory)
+        target_sources(${target} PRIVATE ${ARGN})
+        return()
+    endif ()
+
+    # Находим все файлы в дириктории с исходникамит
+    file(GLOB_RECURSE allFiles "${source_directory}/[^.]*") # Пропуск скрытых файлов
+
+    # Исключаем ненужные
+    if (exclude_sources)
+        set(regexList "${exclude_sources}")
+        string(REPLACE ";" "|" regexList "(${regexList})") # склеиваем все регулярки в одну по "или".
+        list(FILTER allFiles EXCLUDE REGEX "${regexList}")
+    endif ()
+
+    # Раскидываем по группам, тем самым исключая ненужные типы файлов
+    set(headers ${allFiles})
+    list(FILTER headers INCLUDE REGEX "\\.h$")
+    set(sources ${allFiles})
+    list(FILTER sources INCLUDE REGEX "\\.(c|cc|cpp|mm|m)$")
+    set(qt_forms ${allFiles})
+    list(FILTER qt_forms INCLUDE REGEX "\\.ui$")
+    set(qt_resources ${allFiles})
+    list(FILTER qt_resources INCLUDE REGEX "\\.qrc$")
+    set(cmake_scripts ${allFiles})
+    list(FILTER cmake_scripts INCLUDE REGEX "(\\.cmake|CMakeLists.txt)$")
+
+    target_sources(${target} PRIVATE ${ARGN} ${headers} ${sources} ${qt_forms} ${qt_resources} ${cmake_scripts})
+
+    # Организуем структуру для MSVS
+    if(project_group)
+        set_property(TARGET ${name} PROPERTY FOLDER ${project_group})
+        source_group(TREE ${source_directory} PREFIX Sources FILES ${sources})
+        source_group(TREE ${source_directory} PREFIX Headers FILES ${headers})
+        source_group(TREE ${source_directory} PREFIX Forms FILES ${qt_forms})
+        source_group(TREE ${source_directory} PREFIX Resources FILES ${qt_resources})
+        source_group(TREE ${source_directory} PREFIX "" FILES ${cmake_scripts})
+        set(generated_regexp
+                "(\\\\|/)ui_.+\\.h$"
+                "cmake_pch.hxx"
+                "autouic_.+.stamp"
+                "mocs_compilation_.+.cpp"
+        )
+        string(REPLACE ";" "|" generated_regexp "(${generated_regexp})")
+        source_group(Generated REGULAR_EXPRESSION "${generated_regexp}")
+    endif()
+endfunction()
+
+function(__AddTarget_AddCompilerOptions target) # ARGN - list options
+    foreach (option ${ARGN})
+        set(supported true)
+        if (NOT MSVC) # TODO check variable MSVC
+            CheckCXXCompilerFlagCached(${option} supported)
+        endif ()
+        if (${supported})
+            target_compile_options(${target} PRIVATE ${option})
+        endif ()
+    endforeach ()
+endfunction()
+
+# Создание unit-теста с использованием Google Testing Framework
+# Для создания цели используется AddTarget, в котором:
+#   - type = app_console
+#   - к LINK_TARGETS добавляется GTest::gtest_main
+#   - опция MOCK к LINK_TARGETS добавляет GTest::gmock
+# Аргументы аналогичны аргументам AddTarget
+include(GoogleTest)
+function(AddGTest name)
+    set(__options MOCK)
+    set(__one_val)
+    set(__multi_val LINK_LIBRARIES)
+    cmake_parse_arguments(ARG "${__options}" "${__one_val}" "${__multi_val}" ${ARGN})
+
+    AddTarget(ut_${name} app_console
+            LINK_LIBRARIES GTest::gtest_main [ ARG_MOCK GTest::gmock ] ${ARG_LINK_LIBRARIES}
+            ${ARG_UNPARSED_ARGUMENTS}
+    )
+    gtest_add_tests(TARGET ut_${name} SKIP_DEPENDENCY)
+    __AddTarget__AddBuildTests()
+    add_dependencies(BUILD_TESTS ut_${name})
+endfunction()
+
+# Создание unit-теста с использованием Boost Test Library: The Unit Test Framework
+# Для создания цели используется AddTarget, в котором:
+#   - type = app_console
+#   - PROJECT_GROUP = UT
+#   - к COMPILE_DEFINITIONS добавляется BOOST_TEST_DYN_LINK
+#   - к LINK_LIBRARIES добавляется Boost::unit_test_framework
+# Аргументы аналогичны аргументам AddTarget
+function(AddBoostTest name)
+    set(__options)
+    set(__one_val)
+    set(__multi_val
+            LINK_LIBRARIES
+            COMPILE_DEFINITIONS
+    )
+    cmake_parse_arguments(ARGS "${__options}" "${__one_val}" "${__multi_val}" ${ARGN})
+
+    AddTarget(ut_${name}            app_console
+            PROJECT_GROUP           UT
+            COMPILE_DEFINITIONS     BOOST_TEST_DYN_LINK ${ARGS_COMPILE_DEFINITIONS}
+            LINK_LIBRARIES          Boost::unit_test_framework ${ARGS_LINK_LIBRARIES}
+            ${ARGS_UNPARSED_ARGUMENTS}
+    )
+    add_test(NAME ut_${name} COMMAND ut_${name})
+
+    __AddTarget__AddBuildTests()
+    add_dependencies(BUILD_TESTS ut_${name})
+endfunction()
+
+function(__AddTarget__AddBuildTests)
+	if(NOT TARGET BUILD_TESTS)
+		add_custom_target(BUILD_TESTS)
+		if(WIN32)
+            set_property(TARGET BUILD_TESTS PROPERTY FOLDER "CMakePredefinedTargets")
 		endif()
-		if (ARG_QRC)
-			list(APPEND CURRENT_RESOURCES ${ARG_QRC})
-		endif()
-		foreach(qrc_file ${ARG_QRC})
-			message( STATUS "${ARG_NAME}: Using additional qrc: ${qrc_file}" )
-			check_if_exists(${qrc_file} "${ARG_NAME}: ${qrc_file} file specified in QRC list not exists")
-		endforeach()
 	endif()
-
-	if ( WIN32 AND ARG_WIN_APP_ICON)
-		set(RC_FILE_NAME "win_resources.rc")
-		set(RC_FILE_NAME_APPENDED "${ARG_NAME}/${RC_FILE_NAME}")
-		append( CURRENT_SOURCES ${RC_FILE_NAME_APPENDED} )
-	endif()
-
-	if (WIN32)
-		foreach(rc_file ${ARG_WIN_RC})
-			message( STATUS "${ARG_NAME}: Using additional win rc: ${rc_file}" )
-			append(CURRENT_SOURCES ${rc_file})
-		endforeach()
-	endif()
-
-	makeSourceGroups()
-
-	qt_add_resources(RSS_SOURCES ${CURRENT_RESOURCES})
-	set(ALL_SOURCES ${CURRENT_SOURCES} ${CURRENT_HEADERS} ${CURRENT_QML} ${CURRENT_FORMS} ${CURRENT_TS} ${CURRENT_CMAKES} ${RSS_SOURCES} ${ARG_SOURCES} )
-	
-	set( CreateTarget )
-	if(${ARG_TYPE} STREQUAL static_lib)
-		set( TargetType STATIC )
-		set( CreateTarget "library" )
-	elseif(${ARG_TYPE} STREQUAL shared_lib)
-		set( TargetType SHARED )
-		set( CreateTarget "library" )
-		string(TOUPPER "${ARG_NAME}" ProjNameUpperCase)
-		CreateExportLibFile( ${ARG_NAME} ${ProjNameUpperCase}_API ${ARG_NAME}Lib.h )
-	elseif(${ARG_TYPE} STREQUAL app)
-		set( TargetType WIN32 )
-		set( CreateTarget "executable" )
-	elseif(${ARG_TYPE} STREQUAL app_console)
-		set( TargetType "" )
-		set( CreateTarget "executable" )
-	elseif(${ARG_TYPE} STREQUAL header_only)
-		set( TargetType STATIC )
-		set( CreateTarget "library" )
-	else()
-		message( FATAL_ERROR "Unknown target TYPE: ${ARG_TYPE}" )
-	endif()
-
-	if(CreateTarget STREQUAL "library")
-		qt_add_library( ${ARG_NAME} ${TargetType} ${ALL_SOURCES} )
-	elseif(CreateTarget STREQUAL "executable")
-		qt_add_executable( ${ARG_NAME} ${TargetType} ${ALL_SOURCES} )
-	endif()
-
-	if ( WIN32 AND ARG_WIN_APP_ICON)
-		get_target_property(TARGET_OUTPUT_NAME ${ARG_NAME} OUTPUT_NAME)
-
-		#Проверяются переменные, которые должны быть в глобальной области видимости после
-		# GrabAllMapVariables(${PRODUCT_CONFIG}Build SEPARATE_COMMA)
-		# GrabAllMapVariables(${PRODUCT_CONFIG}CommonSettings PRODUCT_NAME)
-		CheckRequiredVariables(
-			ORGANIZATION_NAME                 # название организации
-			PRODUCT_NAME                      # название продукта
-			PRODUCT_NAME_ABOUT                # название продукта в меню "О программе"
-			PRODUCT_NAME_FILE_DESCRIPTION     # название продукта отображаемое пользователю в Windows (напр. в меню "Открыть с помощью")
-			PRODUCT_NAME_VERSIONED            # навзание продукта с номером версии включительно
-			PRODUCT_VERSION_MAJOR             # старшая версия продукта
-			PRODUCT_VERSION_MINOR             # младшая версия продукта
-			BUILDSCRIPTS_HELPERS_DIR          # путь расположения директории .../buildscripts/scripts/helpers
-			ARG_WIN_APP_ICON                  # путь расположения иконки инсталляции
-			TARGET_OUTPUT_NAME                # наименование исполняемого файла
-		)
-
-		set(APP_ICON ${ARG_WIN_APP_ICON})
-		set(RESOURCE_PATH ${BUILDSCRIPTS_HELPERS_DIR}/${RC_FILE_NAME}.in)
-
-		configure_file(${RESOURCE_PATH} ${RC_FILE_NAME_APPENDED})
-	endif()
-
-	if(${ARG_TYPE} STREQUAL header_only)
-		set(stubFolder ${CMAKE_CURRENT_BINARY_DIR}/stubs)
-		file(MAKE_DIRECTORY ${stubFolder})
-		configure_file(${BUILDSCRIPTS_HELPERS_DIR}/HeaderOnlyLibraryStub.cpp.in ${stubFolder}/${ARG_NAME}_stub.cpp)
-		target_sources(${ARG_NAME} PRIVATE ${stubFolder}/${ARG_NAME}_stub.cpp)
-	endif()
-
-	if( ARG_PROJECT_GROUP )
-		set_property(TARGET ${ARG_NAME} PROPERTY FOLDER ${ARG_PROJECT_GROUP})
-	endif()
-
-	set(LIBS_DEBUG)
-	set(LIBS_RELEASE)
-
-	if (ARG_QT_USE)
-		foreach (module ${ARG_QT_USE})
-			find_package(Qt6 REQUIRED COMPONENTS ${module})
-			list(APPEND ARG_LINK_TARGETS Qt6::${module})
-		endforeach()
-		list(APPEND ARG_MODULES QT)
-	endif()
-	
-	foreach (module ${ARG_MODULES})
-#		if (${module}_LIB_DEBUG)
-#			list(APPEND LIBS_DEBUG ${${module}_LIB_DEBUG})
-#		endif()
-#		if (${module}_LIB_RELEASE)
-#			list(APPEND LIBS_RELEASE ${${module}_LIB_RELEASE})
-#		endif()
-		if (${module}_LIB)
-			list(APPEND ARG_LINK_TARGETS ${${module}_LIB})
-		endif()
-		if (${module}_INCLUDE_DIR)
-			list(APPEND ARG_INCLUDE_DIRS ${${module}_INCLUDE_DIR})
-		endif()	
-	endforeach()
-	
-	foreach (lib ${ARG_LINK_TARGETS})
-		target_link_libraries(${ARG_NAME} LINK_PRIVATE ${lib})
-	endforeach()
-
-	if( ARG_DEPENDENCIES )
-		add_dependencies( ${ARG_NAME} ${ARG_DEPENDENCIES})
-	endif()
-
-	foreach (lib ${LIBS_DEBUG})
-		target_link_libraries(${ARG_NAME} LINK_PRIVATE debug ${lib})
-	endforeach()
-	
-	foreach (lib ${LIBS_RELEASE})
-		target_link_libraries(${ARG_NAME} LINK_PRIVATE optimized ${lib})
-	endforeach()
-
-	set(INCLUDE_DIRS_ABSOLUTE)
-	foreach(dir ${ARG_INCLUDE_DIRS})
-		GET_FILENAME_COMPONENT( FULLPATH ${dir} ABSOLUTE )
-		list(APPEND INCLUDE_DIRS_ABSOLUTE ${FULLPATH})
-	endforeach()
-
-	GenerateTranslations(
-		NAME ${ARG_NAME}
-		PATH ${ARG_SOURCE_DIR}
-		FILES ${CURRENT_TS}
-	)
-	
-	target_include_directories(${ARG_NAME} PRIVATE 
-		"${ARG_SOURCE_DIR}"
-		${INCLUDE_DIRS_ABSOLUTE}
-		${CMAKE_CURRENT_BINARY_DIR}
-		${CMAKE_CURRENT_BINARY_DIR}/export
-		)
-
-	target_compile_options(${ARG_NAME} PRIVATE ${ARG_COMPILER_OPTIONS})
-	target_compile_definitions(${ARG_NAME} PRIVATE ${ARG_COMPILE_DEFINITIONS})
-	
-	if(ARG_CXX_STANDARD)
-		set_target_properties(${ARG_NAME} PROPERTIES CXX_STANDARD ${ARG_CXX_STANDARD})
-	endif()
-	
 endfunction()

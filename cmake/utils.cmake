@@ -1,22 +1,5 @@
 include_guard(GLOBAL)
 
-macro(PRAGMA_ONCE)
-	include_guard(GLOBAL)
-endmacro()
-
-if(UNIX AND NOT APPLE)
-	set(LINUX true)
-endif()
-
-if(ANDROID)
-	set(LINUX true)
-	set(UNIX true)
-endif()
-
-if(LINUX AND NOT ANDROID)
-	set(LINUX_OS true) # For linux only stuff
-endif()
-
 include(CMakeParseArguments)
 
 # Добавляет в список LIST_NAME элемент NEW_ELEMENT
@@ -590,14 +573,6 @@ function(LinkSdkLibraryForConfig)
 	# для этого файлы помещаются в секцию PLUGINS так же.
 	# под WIN - dll помещаются в секцию PLUGINS, а библиотеки импорта (lib) - в EXTRA_LINK_LIBRARIES (их только компонуем, никуда не устанавливаем)
 
-	if (NOT WIN32)
-		append(EXTRA_PLUGINS_${config} ${linkLibraries})
-		if (APPLE)
-			list(FILTER EXTRA_PLUGINS_${config} INCLUDE REGEX "\\.dylib")
-		elseif(LINUX)
-			list(FILTER EXTRA_PLUGINS_${config} INCLUDE REGEX "\\.so")
-		endif()
-	endif()
 	append(EXTRA_LINK_LIBRARIES_${config} ${linkLibraries})
 
 	set_target_properties(${ARG_TARGET_NAME} PROPERTIES
@@ -683,10 +658,4 @@ function(LinkSdkLibrary package)
 			)
 		LinkSdkLibraryForConfig(${args})
 	endforeach()
-endfunction()
-
-function(AddBinDirectory path)
-			get_property(third_party_bin_dirs GLOBAL PROPERTY third_party_bin_dirs_property)
-			append_unique(third_party_bin_dirs ${path})
-			set_property(GLOBAL PROPERTY third_party_bin_dirs_property "${third_party_bin_dirs}")
 endfunction()
