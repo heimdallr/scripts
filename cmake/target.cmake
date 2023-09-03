@@ -174,10 +174,18 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
     list(FILTER qt_forms INCLUDE REGEX "\\.ui$")
     set(qt_resources ${allFiles})
     list(FILTER qt_resources INCLUDE REGEX "\\.qrc$")
+    set(qt_ts ${allFiles})
+    list(FILTER qt_ts INCLUDE REGEX "\\.ts$")
     set(cmake_scripts ${allFiles})
     list(FILTER cmake_scripts INCLUDE REGEX "(\\.cmake|CMakeLists.txt)$")
 
-    target_sources(${target} PRIVATE ${ARGN} ${headers} ${sources} ${qt_forms} ${qt_resources} ${cmake_scripts})
+    target_sources(${target} PRIVATE ${ARGN} ${headers} ${sources} ${qt_forms} ${qt_resources} ${qt_ts} ${cmake_scripts})
+
+	GenerateTranslations(
+		NAME ${target}
+		PATH ${source_directory}
+		FILES ${qt_ts}
+	)
 
     # Организуем структуру для MSVS
     if(project_group)
@@ -185,7 +193,7 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
         source_group(TREE ${source_directory} PREFIX Sources FILES ${sources})
         source_group(TREE ${source_directory} PREFIX Headers FILES ${headers})
         source_group(TREE ${source_directory} PREFIX Forms FILES ${qt_forms})
-        source_group(TREE ${source_directory} PREFIX Resources FILES ${qt_resources})
+        source_group(TREE ${source_directory} PREFIX Resources FILES ${qt_resources} ${qt_ts})
         source_group(TREE ${source_directory} PREFIX "" FILES ${cmake_scripts})
         set(generated_regexp
                 "(\\\\|/)ui_.+\\.h$"
