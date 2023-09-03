@@ -90,7 +90,6 @@ function(__AddTarget_CopyDependentLibraries target)
     get_target_property(libraries ${target} LINK_LIBRARIES)
     get_target_property(libraries_int ${target} INTERFACE_LINK_LIBRARIES)
     foreach(lib ${libraries})
-#message("${target} - ${lib}")
     endforeach()
     foreach(lib ${libraries} ${libraries_int})
         if(NOT TARGET ${lib})
@@ -98,19 +97,18 @@ function(__AddTarget_CopyDependentLibraries target)
         endif()
 
         get_target_property(lib_location ${lib} IMPORTED_LOCATION_${CBTUP})
-#message(${target} - ${lib}: ${lib_location})
         if(lib_location)
             get_filename_component(ext ${lib_location} LAST_EXT)
             if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
-                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} NO_SOURCE_PERMISSIONS)
+                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE} NO_SOURCE_PERMISSIONS)
             endif()
         endif()
 
         if("${lib}" STREQUAL "Qt6::Core")
             get_target_property(plugin Qt6::QWindowsIntegrationPlugin IMPORTED_LOCATION_${CBTUP})
-            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/platforms)
+            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/platforms)
             get_target_property(plugin Qt6::QWindowsVistaStylePlugin IMPORTED_LOCATION_${CBTUP})
-            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/styles)
+            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/styles)
         endif()
 
         __AddTarget_CopyDependentLibraries(${lib})
@@ -144,9 +142,17 @@ function(__AddTarget_CreateTarget target type)
 
     # Для shared_lib создаём файл экспорта
     if (${type} STREQUAL shared_lib)
-        generate_export_header(${target})
-        target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+        generate_export_header(${target} EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/export/${target}.h)
+        target_include_directories(${target} PUBLIC ${CMAKE_BINARY_DIR})
     endif ()
+    
+	set_target_properties(${target}
+	    PROPERTIES
+			ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)    
+    
 endfunction()
 
 function(__AddTarget_AddSources target project_group source_directory exclude_sources) # ARGN - list extended sources

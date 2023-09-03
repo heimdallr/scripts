@@ -12,18 +12,18 @@ function(GenerateTranslations)
 	set(ts)
 	add_custom_command(TARGET ${ARG_NAME}
 	    PRE_BUILD
-	    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales
+	    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/locales
 	)
 	foreach(file ${ARG_FILES})
 		list(APPEND ts "${file}\n")
 		get_filename_component( locale ${file} NAME_WE )
 		add_custom_command(TARGET ${ARG_NAME}
 		    PRE_BUILD
-		    COMMAND ${QT_LRELEASE_TOOL} ${file} -qm ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales/${ARG_NAME}_${locale}.qm
+		    COMMAND ${QT_LRELEASE_TOOL} ${file} -qm ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/locales/${ARG_NAME}_${locale}.qm
 		)
 	endforeach()
 
-	set(tslist "${CMAKE_CURRENT_BINARY_DIR}/Resources/${ARG_NAME}_locales.tslist")
+	set(tslist "${CMAKE_BINARY_DIR}/resources/${ARG_NAME}_locales.tslist")
 	file(WRITE ${tslist} ${ts})
 
 	execute_process(COMMAND ${QT_LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}" -ts "@${tslist}")
