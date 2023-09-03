@@ -82,6 +82,11 @@ function(AddTarget name type)
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_TARGETS})
 endfunction()
 
+function(__AddTarget_CopyDependentPlugins plugin folder)
+	get_target_property(lib ${plugin} IMPORTED_LOCATION_${CBTUP})
+	file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${folder})
+endfunction()
+
 function(__AddTarget_CopyDependentLibraries target)
     # Реализация медленная, т.к. на каждый таргет приходится пробегаться по большому списку библиотек.
     # Не на столько медленная, что бы сейчас оптимизировать. Для MaksN время конфигурирования выросло с 0.3c до 0.6c.
@@ -105,10 +110,10 @@ function(__AddTarget_CopyDependentLibraries target)
         endif()
 
         if("${lib}" STREQUAL "Qt6::Core")
-            get_target_property(plugin Qt6::QWindowsIntegrationPlugin IMPORTED_LOCATION_${CBTUP})
-            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/platforms)
-            get_target_property(plugin Qt6::QWindowsVistaStylePlugin IMPORTED_LOCATION_${CBTUP})
-            file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/styles)
+        	__AddTarget_CopyDependentPlugins(Qt6::QWindowsIntegrationPlugin platforms)
+        	__AddTarget_CopyDependentPlugins(Qt6::QWindowsVistaStylePlugin styles)
+        	__AddTarget_CopyDependentPlugins(Qt6::QGifPlugin imageformats)
+        	__AddTarget_CopyDependentPlugins(Qt6::QJpegPlugin imageformats)
         endif()
 
         __AddTarget_CopyDependentLibraries(${lib})
