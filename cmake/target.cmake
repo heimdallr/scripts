@@ -47,7 +47,7 @@ function(AddTarget name type)
             LINK_LIBRARIES               # дополнительные библиотеки для компоновк. E.g. [ WIN32 d3d.lib ]
 
             #PLUGINS                      # Зависимости для сборки, которые будут использованы при фиксапе
-            #DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
+            DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
             #QT_PLUGINS			         # Плагины QT. Например: QWindowsAudio для импортируемой либы Qt5::QWindowsAudioPlugin (См. QT_DIR/lib/cmake/Qt5Multimedia)
             #QT_QML_MODULES               # QML плагины
             #QRC                          # Дополнительные *.qrc файлы с ресурсами, будут подключены и влинкованы в этот модуль
@@ -80,6 +80,9 @@ function(AddTarget name type)
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_LIBRARIES})
     __AddTarget_CopyDependentLibraries(${name}) # Быстрая оптимизация: после ARG_LINK_LIBRARIES, перед ARG_LINK_TARGETS.
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_TARGETS})
+    if (ARG_DEPENDENCIES)
+	    add_dependencies(${name} ${ARG_DEPENDENCIES})
+    endif ()
 endfunction()
 
 function(__AddTarget_CopyDependentPlugins plugin folder)
