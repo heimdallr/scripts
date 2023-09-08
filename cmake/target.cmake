@@ -56,7 +56,7 @@ function(AddTarget name type)
             #LINK_FLAGS                   # Флаги компоновки
             #MAC_XIB                      # Маковские  ui-файлы
             #CONFIGS                      # Здесь указываются файлы конфигурирующие данное приложение (пресеты, ...)
-            #WIN_RC                       # Дополнительные *.rc файлы с виндовыми ресурсами, будут подключены и влинкованы в этот модуль
+            WIN_RC                       # Дополнительные *.rc файлы с виндовыми ресурсами, будут подключены и влинкованы в этот модуль
             #REPO_DEPENDENCIES            # Зависимые репозитории (их NAME), которые будут добавлены в качестве INCLUDE_DIRS.
             #UIC_POSTPROCESS_SCRIPTS      # Список файлов cmake, используемых как команды поспроцессинга UIC (вызываются после него)
             PRECOMPILED_HEADERS          # Список прекомпилируемых хедеров
@@ -82,6 +82,12 @@ function(AddTarget name type)
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_TARGETS})
     if (ARG_DEPENDENCIES)
 	    add_dependencies(${name} ${ARG_DEPENDENCIES})
+    endif ()
+    if (ARG_WIN_RC)
+	    target_sources(${name} PRIVATE ${ARG_WIN_RC})
+	    if (ARG_PROJECT_GROUP)
+	        source_group(Resources FILES ${ARG_WIN_RC})
+	    endif ()
     endif ()
 endfunction()
 
