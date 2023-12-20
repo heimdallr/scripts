@@ -124,6 +124,9 @@ function(__AddTarget_CopyDependentLibraries target)
         	__AddTarget_CopyDependentPlugins(Qt6::QGifPlugin imageformats)
         	__AddTarget_CopyDependentPlugins(Qt6::QJpegPlugin imageformats)
         endif()
+        if("${lib}" STREQUAL "Qt6::Network")
+        	__AddTarget_CopyDependentPlugins(Qt6::QSchannelBackendPlugin tls)
+        endif()
 
         __AddTarget_CopyDependentLibraries(${lib})
     endforeach()
@@ -187,7 +190,7 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
 
     # Раскидываем по группам, тем самым исключая ненужные типы файлов
     set(headers ${allFiles})
-    list(FILTER headers INCLUDE REGEX "\\.h$")
+    list(FILTER headers INCLUDE REGEX "\\.(h|hpp)$")
     set(sources ${allFiles})
     list(FILTER sources INCLUDE REGEX "\\.(c|cc|cpp|mm|m)$")
     set(qt_forms ${allFiles})
