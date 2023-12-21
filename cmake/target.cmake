@@ -98,7 +98,7 @@ endfunction()
 
 function(__AddTarget_CopyDependentLibraries target)
     # Реализация медленная, т.к. на каждый таргет приходится пробегаться по большому списку библиотек.
-    # Не на столько медленная, что бы сейчас оптимизировать. Для MaksN время конфигурирования выросло с 0.3c до 0.6c.
+    # Не на столько медленная, чтобы сейчас оптимизировать.
     string(TOUPPER ${CMAKE_BUILD_TYPE} CBTUP)
 
     get_target_property(libraries ${target} LINK_LIBRARIES)
