@@ -13,9 +13,6 @@ set(Qt6Translations_DIR $ENV{Qt6_DIR}/translations)
 set(QtModules Widgets Xml Network)
 find_package(Qt6 REQUIRED COMPONENTS ${QtModules})
 
-set(icu_modules icudt icuio icuin icuuc)
-target_link_libraries(Qt6::Core INTERFACE ${icu_modules})
-
 set(QT_BIN_DIR $ENV{Qt6_DIR}/bin)
 set(QT_LRELEASE_TOOL "${QT_BIN_DIR}/lrelease")
 set(QT_LUPDATE_TOOL "${QT_BIN_DIR}/lupdate")
