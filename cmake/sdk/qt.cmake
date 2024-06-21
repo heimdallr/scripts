@@ -10,7 +10,7 @@ set(Qt6CoreTools_DIR ${Qt6Tools_DIR}/Qt6CoreTools)
 set(Qt6GuiTools_DIR ${Qt6Tools_DIR}/Qt6GuiTools)
 set(Qt6Translations_DIR $ENV{Qt6_DIR}/translations)
 
-set(QtModules Widgets Xml Network Svg)
+set(QtModules Widgets Xml Network Svg SvgWidgets)
 find_package(Qt6 REQUIRED COMPONENTS ${QtModules})
 
 set(QT_BIN_DIR $ENV{Qt6_DIR}/bin)
