@@ -12,14 +12,14 @@ function(GenerateTranslations)
 	set(ts)
 	add_custom_command(TARGET ${ARG_NAME}
 	    PRE_BUILD
-	    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/locales
+	    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/locales
 	)
 	foreach(file ${ARG_FILES})
 		list(APPEND ts "${file}\n")
 		get_filename_component( locale ${file} NAME_WE )
 		add_custom_command(TARGET ${ARG_NAME}
 		    PRE_BUILD
-		    COMMAND ${QT_LRELEASE_TOOL} ${file} -qm ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/locales/${ARG_NAME}_${locale}.qm
+		    COMMAND ${QT_LRELEASE_TOOL} ${file} -qm ${CMAKE_BINARY_DIR}/bin/locales/${ARG_NAME}_${locale}.qm
 		)
 	endforeach()
 

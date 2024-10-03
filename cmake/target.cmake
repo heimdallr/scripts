@@ -93,7 +93,7 @@ endfunction()
 
 function(__AddTarget_CopyDependentPlugins plugin folder)
 	get_target_property(lib ${plugin} IMPORTED_LOCATION_${CBTUP})
-	file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${folder})
+	file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR}/bin/${folder})
 endfunction()
 
 function(__AddTarget_CopyDependentLibraries target)
@@ -114,7 +114,7 @@ function(__AddTarget_CopyDependentLibraries target)
         if(lib_location)
             get_filename_component(ext ${lib_location} LAST_EXT)
             if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
-                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE} NO_SOURCE_PERMISSIONS)
+                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
             endif()
         endif()
 
@@ -167,7 +167,8 @@ function(__AddTarget_CreateTarget target type)
 	    PROPERTIES
 			ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+			RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin
+			RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
 )    
     
 endfunction()
