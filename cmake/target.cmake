@@ -94,6 +94,7 @@ endfunction()
 function(__AddTarget_CopyDependentPlugins plugin folder)
 	get_target_property(lib ${plugin} IMPORTED_LOCATION_${CBTUP})
 	file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR}/bin/${folder})
+	install(FILES ${lib} DESTINATION ./${folder})
 endfunction()
 
 function(__AddTarget_CopyDependentLibraries target)
@@ -115,6 +116,7 @@ function(__AddTarget_CopyDependentLibraries target)
             get_filename_component(ext ${lib_location} LAST_EXT)
             if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
                 file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
+				install(FILES ${lib_location} DESTINATION .)
             endif()
         endif()
 
@@ -171,6 +173,10 @@ function(__AddTarget_CreateTarget target type)
 			RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
 )    
     
+    if ((${type} STREQUAL shared_lib) OR (${type} STREQUAL app) OR (${type} STREQUAL app_console))
+		install(TARGETS ${target} RUNTIME DESTINATION .)
+    endif ()
+
 endfunction()
 
 function(__AddTarget_AddSources target project_group source_directory exclude_sources) # ARGN - list extended sources
