@@ -122,7 +122,7 @@ function(__AddTarget_CopyDependentLibraries target)
 
         if("${lib}" STREQUAL "Qt6::Core")
         	__AddTarget_CopyDependentPlugins(Qt6::QWindowsIntegrationPlugin platforms)
-        	__AddTarget_CopyDependentPlugins(Qt6::QWindowsVistaStylePlugin styles)
+        	__AddTarget_CopyDependentPlugins(Qt6::QModernWindowsStylePlugin styles)
         	__AddTarget_CopyDependentPlugins(Qt6::QGifPlugin imageformats)
         	__AddTarget_CopyDependentPlugins(Qt6::QJpegPlugin imageformats)
         endif()
