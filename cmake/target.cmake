@@ -171,7 +171,14 @@ function(__AddTarget_CreateTarget target type)
 			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 			RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin
 			RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
-)    
+	)
+
+	if (${QT_MAJOR_VERSION} STREQUAL "5")
+		set_target_properties(${target}
+		    PROPERTIES
+				VS_PLATFORM_TOOLSET v142
+		)
+	endif()
     
     if ((${type} STREQUAL shared_lib) OR (${type} STREQUAL app) OR (${type} STREQUAL app_console))
 		install(TARGETS ${target} RUNTIME DESTINATION .)
