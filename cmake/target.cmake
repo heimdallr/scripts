@@ -2,6 +2,7 @@ include_guard(GLOBAL)
 
 include(GenerateExportHeader)
 include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
+set(SCRIPT_HELPERS_DIR ${CMAKE_CURRENT_LIST_DIR}/../helpers)
 
 function(AddTarget name type)
     # name                      # Имя цели, обязательно
@@ -303,6 +304,27 @@ function(AddBoostTest name)
 
     __AddTarget__AddBuildTests()
     add_dependencies(BUILD_TESTS ut_${name})
+endfunction()
+
+function(CreateWinRC name)
+    set(__options)
+    set(__one_val_required
+    	COMPANY_NAME
+    	FILE_NAME
+    	FILE_DESCRIPTION
+    	APP_ICON
+    	APP_VERSION
+    )
+    set(__one_val_optional)
+    set(__multi_val)
+    ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
+    set(COMPANY_NAME ${ARG_COMPANY_NAME})
+    set(FILE_NAME ${ARG_FILE_NAME})
+    set(FILE_DESCRIPTION ${ARG_FILE_DESCRIPTION})
+    set(APP_ICON ${ARG_APP_ICON})
+    set(APP_VERSION ${ARG_APP_VERSION})
+    string(REPLACE "." "," APP_VERSION_COMMA ${ARG_APP_VERSION})
+    configure_file(${SCRIPT_HELPERS_DIR}/win_resources.rc.in ${CMAKE_CURRENT_BINARY_DIR}/resources/${name}.rc @ONLY)
 endfunction()
 
 function(__AddTarget__AddBuildTests)
