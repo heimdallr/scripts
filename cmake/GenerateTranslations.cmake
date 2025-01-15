@@ -27,4 +27,10 @@ function(GenerateTranslations)
 	file(WRITE ${tslist} ${ts})
 
 	execute_process(COMMAND ${QT_LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}" -ts "@${tslist}")
+
+	foreach(file ${ARG_FILES})
+		file(READ ${file} ts_content)
+		string(REGEX REPLACE " line=\"[0-9]+\"\/" "/" ts_content "${ts_content}")
+		file(WRITE ${file} "${ts_content}")
+	endforeach()
 endfunction()
