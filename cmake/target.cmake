@@ -49,7 +49,7 @@ function(AddTarget name type)
 
             #PLUGINS                      # Зависимости для сборки, которые будут использованы при фиксапе
             DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
-            #QT_PLUGINS			         # Плагины QT. Например: QWindowsAudio для импортируемой либы Qt5::QWindowsAudioPlugin (См. QT_DIR/lib/cmake/Qt5Multimedia)
+            QT_PLUGINS			         # Плагины QT
             #QT_QML_MODULES               # QML плагины
             #QRC                          # Дополнительные *.qrc файлы с ресурсами, будут подключены и влинкованы в этот модуль
             #FORMS                        # Дополнительные *.ui файлы
@@ -67,6 +67,7 @@ function(AddTarget name type)
     __AddTarget_CreateTarget(${name} ${type})
     __AddTarget_AddSources(${name} "${ARG_PROJECT_GROUP}" "${ARG_SOURCE_DIRECTORY}" "${ARG_EXCLUDE_SOURCES}" ${ARG_SOURCES})
     __AddTarget_AddCompilerOptions(${name} ${ARG_COMPILER_OPTIONS})
+	__AddTarget_AddQtPlugins(${ARG_QT_PLUGINS})
 
     target_compile_definitions(${name} PRIVATE ${ARG_COMPILE_DEFINITIONS})
 
@@ -92,12 +93,6 @@ function(AddTarget name type)
     endif ()
 endfunction()
 
-function(__AddTarget_CopyDependentPlugins plugin folder)
-	get_target_property(lib ${plugin} IMPORTED_LOCATION_${CBTUP})
-	file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR}/bin/${folder})
-	install(FILES ${lib} DESTINATION ./${folder})
-endfunction()
-
 function(__AddTarget_CopyDependentLibraries target)
     # Реализация медленная, т.к. на каждый таргет приходится пробегаться по большому списку библиотек.
     # Не на столько медленная, чтобы сейчас оптимизировать.
@@ -119,16 +114,6 @@ function(__AddTarget_CopyDependentLibraries target)
                 file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
 				install(FILES ${lib_location} DESTINATION .)
             endif()
-        endif()
-
-        if("${lib}" STREQUAL "Qt6::Core")
-        	__AddTarget_CopyDependentPlugins(Qt6::QWindowsIntegrationPlugin platforms)
-        	__AddTarget_CopyDependentPlugins(Qt6::QModernWindowsStylePlugin styles)
-        	__AddTarget_CopyDependentPlugins(Qt6::QGifPlugin imageformats)
-        	__AddTarget_CopyDependentPlugins(Qt6::QJpegPlugin imageformats)
-        endif()
-        if("${lib}" STREQUAL "Qt6::Network")
-        	__AddTarget_CopyDependentPlugins(Qt6::QSchannelBackendPlugin tls)
         endif()
 
         __AddTarget_CopyDependentLibraries(${lib})
@@ -254,6 +239,16 @@ function(__AddTarget_AddCompilerOptions target) # ARGN - list options
             target_compile_options(${target} PRIVATE ${option})
         endif ()
     endforeach ()
+endfunction()
+
+function(__AddTarget_AddQtPlugins) # ARGN - list plugins
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CBTUP)
+	foreach (name ${ARGN})
+		get_target_property(plugin ${name} IMPORTED_LOCATION_${CBTUP})
+		get_filename_component(folder ${plugin} DIRECTORY)
+		get_filename_component(folder ${folder} NAME)
+		file(COPY ${plugin} DESTINATION ${CMAKE_BINARY_DIR}/bin/${folder})
+	endforeach ()
 endfunction()
 
 # Создание unit-теста с использованием Google Testing Framework
