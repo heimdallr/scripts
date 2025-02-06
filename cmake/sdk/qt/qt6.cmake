@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 # Подключаем Qt
 if(NOT DEFINED ENV{Qt6_DIR})
-	set(ENV{Qt6_DIR} ${SDK_PATH}/Qt/Qt6/6.8.0/msvc2022_64)
+	set(ENV{Qt6_DIR} ${SDK_PATH}/Qt/Qt6/6.8.2/msvc2022_64)
 endif()
 
 set(Qt6Tools_DIR $ENV{Qt6_DIR}/lib/cmake)
