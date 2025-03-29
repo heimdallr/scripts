@@ -100,8 +100,6 @@ function(__AddTarget_CopyDependentLibraries target)
 
     get_target_property(libraries ${target} LINK_LIBRARIES)
     get_target_property(libraries_int ${target} INTERFACE_LINK_LIBRARIES)
-    foreach(lib ${libraries})
-    endforeach()
     foreach(lib ${libraries} ${libraries_int})
         if(NOT TARGET ${lib})
             continue() # LINK_PUBLIC, LINK_PRIVATE, custom targets, etc.
