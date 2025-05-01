@@ -8,6 +8,7 @@ function(AddTarget name type)
     # name                      # Имя цели, обязательно
     # type                      # Тип цели shared_lib|static_lib|app|app_bundle|app_console|header_only
     set(__options
+    		SKIP_INSTALL         # не включать в установку
             #QT                  # используется Qt
             #NEED_PROTECTION     # таргет необходимо защищать (только для Win)
             #EXPORT_INCLUDE      # выставлять текущую директорию цели как публичный include при её компоновке.
@@ -64,7 +65,7 @@ function(AddTarget name type)
     )
     ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
 
-    __AddTarget_CreateTarget(${name} ${type})
+    __AddTarget_CreateTarget(${name} ${type} ${ARG_SKIP_INSTALL})
     __AddTarget_AddSources(${name} "${ARG_PROJECT_GROUP}" "${ARG_SOURCE_DIRECTORY}" "${ARG_EXCLUDE_SOURCES}" ${ARG_SOURCES})
     __AddTarget_AddCompilerOptions(${name} ${ARG_COMPILER_OPTIONS})
 	__AddTarget_AddQtPlugins(${ARG_QT_PLUGINS})
@@ -118,7 +119,7 @@ function(__AddTarget_CopyDependentLibraries target)
     endforeach()
 endfunction()
 
-function(__AddTarget_CreateTarget target type)
+function(__AddTarget_CreateTarget target type skip_install)
 
     set(TargetType STATIC)
     set(CreateTarget library)
@@ -164,7 +165,7 @@ function(__AddTarget_CreateTarget target type)
 		)
 	endif()
     
-    if ((${type} STREQUAL shared_lib) OR (${type} STREQUAL app) OR (${type} STREQUAL app_console))
+    if (NOT skip_install AND ((${type} STREQUAL shared_lib) OR (${type} STREQUAL app) OR (${type} STREQUAL app_console)))
 		install(TARGETS ${target} RUNTIME DESTINATION .)
     endif ()
 
