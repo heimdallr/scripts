@@ -112,6 +112,12 @@ function(__AddTarget_CopyDependentLibraries target)
             if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
                 file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
 				install(FILES ${lib_location} DESTINATION .)
+				if("${CBTUP}" STREQUAL "DEBUG")
+					string(REGEX REPLACE "(.+)\\.dll" "\\1.pdb" lib_location ${lib_location})
+					if (EXISTS "${lib_location}")
+						file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
+					endif()
+				endif()
             endif()
         endif()
 
