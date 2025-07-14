@@ -26,7 +26,7 @@ function(GenerateTranslations)
 	set(tslist "${CMAKE_BINARY_DIR}/resources/${ARG_NAME}_locales.tslist")
 	file(WRITE ${tslist} ${ts})
 
-	execute_process(COMMAND ${QT_LUPDATE_TOOL} -no-ui-lines "${ARG_PATH}" -ts "@${tslist}")
+	execute_process(COMMAND ${QT_LUPDATE_TOOL} -extensions cpp,h,ui -no-ui-lines "${ARG_PATH}" -ts "@${tslist}")
 
 	foreach(file ${ARG_FILES})
 		file(READ ${file} ts_content)
