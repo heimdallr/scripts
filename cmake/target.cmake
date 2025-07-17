@@ -81,7 +81,6 @@ function(AddTarget name type)
 
     target_link_directories(${name} PRIVATE ${ARG_LIBRARIES_DIRECTORIES})
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_LIBRARIES})
-    __AddTarget_CopyDependentLibraries(${name}) # Быстрая оптимизация: после ARG_LINK_LIBRARIES, перед ARG_LINK_TARGETS.
     target_link_libraries(${name} LINK_PRIVATE ${ARG_LINK_TARGETS})
     if (ARG_DEPENDENCIES)
 	    add_dependencies(${name} ${ARG_DEPENDENCIES})
@@ -94,39 +93,7 @@ function(AddTarget name type)
     endif ()
 endfunction()
 
-function(__AddTarget_CopyDependentLibraries target)
-    # Реализация медленная, т.к. на каждый таргет приходится пробегаться по большому списку библиотек.
-    # Не на столько медленная, чтобы сейчас оптимизировать.
-    string(TOUPPER ${CMAKE_BUILD_TYPE} CBTUP)
-
-    get_target_property(libraries ${target} LINK_LIBRARIES)
-    get_target_property(libraries_int ${target} INTERFACE_LINK_LIBRARIES)
-    foreach(lib ${libraries} ${libraries_int})
-        if(NOT TARGET ${lib})
-            continue() # LINK_PUBLIC, LINK_PRIVATE, custom targets, etc.
-        endif()
-
-        get_target_property(lib_location ${lib} IMPORTED_LOCATION_${CBTUP})
-        if(lib_location)
-            get_filename_component(ext ${lib_location} LAST_EXT)
-            if("${ext}" STREQUAL ".dll") # В некоторых библиотеках тут почему-то лежат .lib-файлы, нам это не надо.
-                file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
-				install(FILES ${lib_location} DESTINATION .)
-				if("${CBTUP}" STREQUAL "DEBUG")
-					string(REGEX REPLACE "(.+)\\.dll" "\\1.pdb" lib_location ${lib_location})
-					if (EXISTS "${lib_location}")
-						file(COPY ${lib_location} DESTINATION ${CMAKE_BINARY_DIR}/bin NO_SOURCE_PERMISSIONS)
-					endif()
-				endif()
-            endif()
-        endif()
-
-        __AddTarget_CopyDependentLibraries(${lib})
-    endforeach()
-endfunction()
-
 function(__AddTarget_CreateTarget target type skip_install)
-
     set(TargetType STATIC)
     set(CreateTarget library)
 
@@ -170,9 +137,15 @@ function(__AddTarget_CreateTarget target type skip_install)
 				VS_PLATFORM_TOOLSET v142
 		)
 	endif()
-    
-    if (NOT skip_install AND ((${type} STREQUAL shared_lib) OR (${type} STREQUAL app) OR (${type} STREQUAL app_console)))
+    		
+    if (NOT skip_install AND ((${type} STREQUAL shared_lib) OR (${CreateTarget} STREQUAL "executable")))
 		install(TARGETS ${target} RUNTIME DESTINATION .)
+		if (${CreateTarget} STREQUAL "executable")
+			add_custom_command(TARGET ${target} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${target}> $<TARGET_RUNTIME_DLLS:${target}>
+				COMMAND_EXPAND_LISTS
+			)
+		endif()
     endif ()
 
 endfunction()
