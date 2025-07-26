@@ -9,5 +9,4 @@ if (NOT DEFINED SDK_PATH)
 endif ()
 
 include(${CMAKE_CURRENT_LIST_DIR}/sdk/qt.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/sdk/7z.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/sdk/imagequant.cmake)
