@@ -140,12 +140,6 @@ function(__AddTarget_CreateTarget target type skip_install)
     		
     if (NOT skip_install AND ((${type} STREQUAL shared_lib) OR (${CreateTarget} STREQUAL "executable")))
 		install(TARGETS ${target} RUNTIME DESTINATION .)
-		if (${CreateTarget} STREQUAL "executable")
-			add_custom_command(TARGET ${target} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${target}> $<TARGET_RUNTIME_DLLS:${target}>
-				COMMAND_EXPAND_LISTS
-			)
-		endif()
     endif ()
 
 endfunction()
@@ -224,7 +218,7 @@ function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
 		#list(JOIN ${ARGN} "," plugins)
 		string(REPLACE ";"  "," plugins "${ARGN}")
 		add_custom_command(TARGET ${target} POST_BUILD
-			COMMAND ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/windeployqt.exe --skip-plugin-types generic,iconengines,networkinformation --no-translations --include-plugins ${plugins} $<TARGET_FILE_DIR:${target}>
+			COMMAND ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/windeployqt.exe --no-libraries --skip-plugin-types generic,iconengines,networkinformation --no-translations --include-plugins ${plugins} $<TARGET_FILE_DIR:${target}>
 			COMMAND_EXPAND_LISTS
 		)
 	endif()
