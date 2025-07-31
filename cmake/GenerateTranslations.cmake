@@ -9,6 +9,9 @@ function(GenerateTranslations)
 		return()
 	endif()
 	
+	set(QT_LRELEASE_TOOL ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/lrelease)
+	set(QT_LUPDATE_TOOL ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/lupdate)
+	
 	set(ts)
 	add_custom_command(TARGET ${ARG_NAME}
 	    PRE_BUILD
