@@ -176,12 +176,6 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
 
     target_sources(${target} PRIVATE ${ARGN} ${headers} ${sources} ${qt_forms} ${qt_resources} ${qt_ts} ${cmake_scripts})
 
-	GenerateTranslations(
-		NAME ${target}
-		PATH ${source_directory}
-		FILES ${qt_ts}
-	)
-
     # Организуем структуру для MSVS
     if(project_group)
         set_property(TARGET ${name} PROPERTY FOLDER ${project_group})
