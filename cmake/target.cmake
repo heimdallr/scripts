@@ -73,7 +73,7 @@ function(AddTarget name type)
     target_compile_definitions(${name} PRIVATE ${ARG_COMPILE_DEFINITIONS})
 
     target_include_directories(${name} PRIVATE ${ARG_INCLUDE_DIRECTORIES})
-    if (ARG_SOURCE_DIRECTORY)
+    if (NOT ${type} STREQUAL header_only AND ARG_SOURCE_DIRECTORY)
         target_include_directories(${name} PRIVATE ${ARG_SOURCE_DIRECTORY})
     endif ()
 
@@ -99,6 +99,7 @@ function(__AddTarget_CreateTarget target type skip_install)
 
     if (${type} STREQUAL static_lib)
     elseif (${type} STREQUAL header_only)
+        set(TargetType INTERFACE)
     elseif (${type} STREQUAL shared_lib)
         set(TargetType SHARED)
     elseif (${type} STREQUAL app)
