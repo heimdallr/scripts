@@ -212,8 +212,12 @@ function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
 	if(ARGN)
 		#list(JOIN ${ARGN} "," plugins)
 		string(REPLACE ";"  "," plugins "${ARGN}")
+		set(force_openssl)
+		if (${plugins} MATCHES ".*qopensslbackend.*")
+			set(force_openssl "-force-openssl")
+		endif()
 		add_custom_command(TARGET ${target} POST_BUILD
-			COMMAND ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/windeployqt.exe --no-libraries --skip-plugin-types generic,iconengines,networkinformation --no-translations --include-plugins ${plugins} $<TARGET_FILE_DIR:${target}>
+			COMMAND ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/windeployqt.exe --no-libraries --skip-plugin-types generic,iconengines,networkinformation --no-translations --include-plugins ${plugins} ${force_openssl} $<TARGET_FILE_DIR:${target}>
 			COMMAND_EXPAND_LISTS
 		)
 	endif()
