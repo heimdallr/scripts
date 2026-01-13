@@ -63,6 +63,7 @@ function(AddTarget name type)
             #UIC_POSTPROCESS_SCRIPTS      # Список файлов cmake, используемых как команды поспроцессинга UIC (вызываются после него)
             PRECOMPILED_HEADERS          # Список прекомпилируемых хедеров
     )
+    message(STATUS "configuring ${name}")
     ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
 
     __AddTarget_CreateTarget(${name} ${type} ${ARG_SKIP_INSTALL})
