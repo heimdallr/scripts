@@ -161,7 +161,14 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
         string(REPLACE ";" "|" regexList "(${regexList})") # склеиваем все регулярки в одну по "или".
         list(FILTER allFiles EXCLUDE REGEX "${regexList}")
     endif ()
-
+    
+    # исключаем платформозависимые от чужой платформы
+    set(ALL_SYSTEMS Windows Linux Darwin)
+    list(REMOVE_ITEM ALL_SYSTEMS ${CMAKE_HOST_SYSTEM_NAME})
+    foreach(system ${ALL_SYSTEMS})
+        list(FILTER allFiles EXCLUDE REGEX ".*/${system}/.*")    	
+    endforeach()
+    
     # Раскидываем по группам, тем самым исключая ненужные типы файлов
     set(headers ${allFiles})
     list(FILTER headers INCLUDE REGEX "\\.(h|hpp)$")
