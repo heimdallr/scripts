@@ -1,5 +1,14 @@
 include_guard(GLOBAL)
 
+set(CONAN_PROFILE)
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
+	set(CONAN_PROFILE msvc2022_x86_64)
+elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
+	set(CONAN_PROFILE gcc_x86_64)
+else()
+	message(FATAL_ERROR "Unsupported host system: ${CMAKE_HOST_SYSTEM_NAME}")
+endif()
+
 function(conan_install path profile)
 	set(CONAN_ADDITIONAL_PARAMETERS)
 	if(${CMAKE_GENERATOR} STREQUAL "Ninja")
