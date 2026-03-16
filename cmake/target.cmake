@@ -210,7 +210,7 @@ function(__AddTarget_AddCompilerOptions target) # ARGN - list options
     foreach (option ${ARGN})
         set(supported true)
         if (NOT MSVC) # TODO check variable MSVC
-            CheckCXXCompilerFlagCached(${option} supported)
+ #           CheckCXXCompilerFlagCached(${option} supported)
         endif ()
         if (${supported})
             target_compile_options(${target} PRIVATE ${option})
