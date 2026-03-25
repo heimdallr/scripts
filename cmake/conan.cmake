@@ -1,12 +1,13 @@
 include_guard(GLOBAL)
 
 set(CONAN_PROFILE)
-if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	set(CONAN_PROFILE msvc2022_x86_64)
-elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
 	set(CONAN_PROFILE gcc_x86_64)
 else()
-	message(FATAL_ERROR "Unsupported host system: ${CMAKE_HOST_SYSTEM_NAME}")
+	message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
 endif()
 
 function(conan_install path profile)
