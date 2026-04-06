@@ -1,5 +1,0 @@
-set(7z_ROOT "${SDK_PATH}/7z/x64")
-string(REPLACE "\\" "/" 7z_ROOT ${7z_ROOT})
-if (NOT EXISTS ${7z_ROOT}/bin/7z.dll)
-	message(FATAL_ERROR "7z.dll not found")
-endif()

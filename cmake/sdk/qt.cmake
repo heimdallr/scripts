@@ -1,5 +1,0 @@
-if(NOT DEFINED QT_MAJOR_VERSION)
-	set(QT_MAJOR_VERSION 6)
-endif()
-
-include(${CMAKE_CURRENT_LIST_DIR}/qt/qt${QT_MAJOR_VERSION}.cmake)

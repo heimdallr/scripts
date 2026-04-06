@@ -1,11 +1,58 @@
 include_guard(GLOBAL)
 
-# Подключаем SDK
-if (NOT DEFINED SDK_PATH)
-	set(SDK_PATH $ENV{SDK_PATH})
-	if (NOT SDK_PATH)
-		set(SDK_PATH D:/sdk)
-	endif ()
-endif ()
+include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
 
-include(${CMAKE_CURRENT_LIST_DIR}/sdk/imagequant.cmake)
+function(CopyAndInstallQt)
+	set(D)
+	if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+		set(D d)
+	endif()
+
+	set(QT_BIN_FILES)
+	set(QT_PDB_FILES)
+
+	foreach(lib ${ARGN})
+		list(APPEND QT_BIN_FILES ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/Qt${QT_MAJOR_VERSION}${lib}${D}.dll)
+		if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+			list(APPEND QT_PDB_FILES ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/Qt${QT_MAJOR_VERSION}${lib}${D}.pdb)
+		endif()
+	endforeach()
+	
+	file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+		install(FILES ${QT_BIN_FILES} DESTINATION .)
+	endif()	
+endfunction()
+
+function(InstallQtPlugins)
+	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+		foreach(plugin ${ARGN})
+			install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/${plugin} DESTINATION .)
+		endforeach()
+	endif()	
+endfunction()
+
+function(CopyAndInstallICU)
+	set(D)
+	if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+		set(D d)
+	endif()
+
+	string(REPLACE "." ";" ICU_VERSION_LIST ${ICU_VERSION_STRING})
+	list(GET ICU_VERSION_LIST 0 ICU_MAJOR_VERSION)
+
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+	set(ICU_BIN_DIR ${icu_BIN_DIRS_${CMAKE_BUILD_TYPE_UPPER}})
+	set(ICU_BIN_FILES)
+
+	foreach(lib ${ARGN})
+		list(APPEND ICU_BIN_FILES ${ICU_BIN_DIR}/icu${lib}${D}${ICU_MAJOR_VERSION}.dll)
+	endforeach()	
+		
+	file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+	
+	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+		install(FILES ${ICU_BIN_FILES} DESTINATION .)
+	endif()	
+endfunction()
