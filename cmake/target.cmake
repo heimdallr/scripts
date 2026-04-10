@@ -310,3 +310,16 @@ function(__AddTarget__AddBuildTests)
 		endif()
 	endif()
 endfunction()
+
+function (DeployTarget name)
+	qt_generate_deploy_app_script(
+		TARGET ${name}
+		OUTPUT_SCRIPT deploy_script
+		NO_TRANSLATIONS
+		EXCLUDE_PLUGIN_TYPES egldeviceintegrations generic platforminputcontexts qmltooling vectorimageformats
+		INCLUDE_PLUGIN_TYPES wayland-shell-integration
+		INCLUDE_PLUGINS qwayland
+	)
+	install(SCRIPT ${deploy_script})
+endfunction()
+
