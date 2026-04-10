@@ -72,9 +72,3 @@ function(CopyAndInstallICU)
 	endif()	
 endfunction()
 
-if (NOT WIN32)
-	file(WRITE "${CMAKE_BINARY_DIR}/start.sh" "#!/bin/bash\nLD_LIBRARY_PATH=$(dirname \"$0\")/lib:$LD_LIBRARY_PATH ./FLibrary")
-	install(FILES "${CMAKE_BINARY_DIR}/start.sh" DESTINATION .
-		PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ
-	)
-endif()
