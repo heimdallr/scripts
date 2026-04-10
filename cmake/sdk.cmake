@@ -34,8 +34,13 @@ function(InstallQtPlugins)
 endfunction()
 
 function(CopyAndInstallICU)
+	set(LIBS tu data uc i18n)
+	if (WIN32)
+		set(LIBS tu dt uc in)
+	endif()
+
 	set(D)
-	if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+	if (WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 		set(D d)
 	endif()
 
@@ -44,15 +49,32 @@ function(CopyAndInstallICU)
 
 	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 	set(ICU_BIN_DIR ${icu_BIN_DIRS_${CMAKE_BUILD_TYPE_UPPER}})
+	set(ICU_LIB_DIR ${icu_LIB_DIRS_${CMAKE_BUILD_TYPE_UPPER}})
 	set(ICU_BIN_FILES)
 
-	foreach(lib ${ARGN})
-		list(APPEND ICU_BIN_FILES ${ICU_BIN_DIR}/icu${lib}${D}${ICU_MAJOR_VERSION}.dll)
-	endforeach()	
+	foreach(lib ${LIBS})
+		if (WIN32)
+			list(APPEND ICU_BIN_FILES ${ICU_BIN_DIR}/icu${lib}${D}${ICU_MAJOR_VERSION}.dll)
+		else()
+			list(APPEND ICU_BIN_FILES ${ICU_LIB_DIR}/libicu${lib}.so.${ICU_VERSION_STRING})
+			list(APPEND ICU_BIN_FILES ${ICU_LIB_DIR}/libicu${lib}.so.${ICU_MAJOR_VERSION})
+		endif()
+	endforeach()
 		
 	file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 	
 	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
-		install(FILES ${ICU_BIN_FILES} DESTINATION .)
+		if (WIN32)
+			install(FILES ${ICU_BIN_FILES} DESTINATION .)
+		else()
+			install(FILES ${ICU_BIN_FILES} DESTINATION ./lib)
+		endif()
 	endif()	
 endfunction()
+
+if (NOT WIN32)
+	file(WRITE "${CMAKE_BINARY_DIR}/start.sh" "#!/bin/bash\nLD_LIBRARY_PATH=$(dirname \"$0\")/lib:$LD_LIBRARY_PATH ./FLibrary")
+	install(FILES "${CMAKE_BINARY_DIR}/start.sh" DESTINATION .
+		PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ
+	)
+endif()
