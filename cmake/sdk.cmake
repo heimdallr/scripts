@@ -61,7 +61,11 @@ function(CopyAndInstallICU)
 		endif()
 	endforeach()
 		
-	file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+	if (WIN32)
+		file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+	else()
+		file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/lib)
+	endif()
 	
 	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
 		if (WIN32)
