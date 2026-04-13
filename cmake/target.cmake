@@ -135,10 +135,6 @@ function(__AddTarget_CreateTarget target type skip_install)
 			RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
 	)
 
-	if (MSVC AND ${QT_MAJOR_VERSION} STREQUAL "5")
-		set_target_properties(${target} PROPERTIES VS_PLATFORM_TOOLSET v142)
-	endif()
-    		
 	if(NOT WIN32 AND ${type} STREQUAL shared_lib)
 		set_target_properties(${target} PROPERTIES VERSION ${PRODUCT_VERSION} SOVERSION ${MAJOR_PRODUCT_VERSION}.${MINOR_PRODUCT_VERSION})
 	endif()
