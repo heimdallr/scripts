@@ -12,12 +12,13 @@ function(CopyAndInstallQt)
 	set(QT_PDB_FILES)
 
 	foreach(lib ${ARGN})
-		list(APPEND QT_BIN_FILES ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/Qt${QT_MAJOR_VERSION}${lib}${D}.dll)
+		set(lib_base_file_name "${QT_ROOT}/bin/Qt${QT_MAJOR_VERSION}${lib}${D}")
+		list(APPEND QT_BIN_FILES ${lib_base_file_name}.dll)
 		if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-			list(APPEND QT_PDB_FILES ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/Qt${QT_MAJOR_VERSION}${lib}${D}.pdb)
+			list(APPEND QT_PDB_FILES ${lib_base_file_name}.pdb)
 		endif()
 	endforeach()
-	
+
 	file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 
 	if (${CMAKE_BUILD_TYPE} STREQUAL "Release")

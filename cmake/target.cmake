@@ -135,10 +135,6 @@ function(__AddTarget_CreateTarget target type skip_install)
 			RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
 	)
 
-	if (MSVC AND ${QT_MAJOR_VERSION} STREQUAL "5")
-		set_target_properties(${target} PROPERTIES VS_PLATFORM_TOOLSET v142)
-	endif()
-    		
 	if(NOT WIN32 AND ${type} STREQUAL shared_lib)
 		set_target_properties(${target} PROPERTIES VERSION ${PRODUCT_VERSION} SOVERSION ${MAJOR_PRODUCT_VERSION}.${MINOR_PRODUCT_VERSION})
 	endif()
@@ -224,8 +220,11 @@ function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
 		#list(JOIN ${ARGN} "," plugins)
 		string(REPLACE ";"  "," plugins "${ARGN}")
 		if (WIN32)
+			if (QT6)
+				set(additional_arguments --skip-plugin-types generic,iconengines,networkinformation  --include-plugins ${plugins})
+			endif()
 			add_custom_command(TARGET ${target} POST_BUILD
-				COMMAND ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}/windeployqt.exe --no-libraries --skip-plugin-types generic,iconengines,networkinformation --no-translations --include-plugins ${plugins} $<TARGET_FILE_DIR:${target}>
+				COMMAND ${QT_ROOT}/bin/windeployqt.exe --no-libraries --no-translations ${additional_arguments} $<TARGET_FILE_DIR:${target}>
 				COMMAND_EXPAND_LISTS
 			)
 		endif()
