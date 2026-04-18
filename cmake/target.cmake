@@ -221,7 +221,7 @@ function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
 		string(REPLACE ";"  "," plugins "${ARGN}")
 		if (WIN32)
 			if (QT6)
-				set(additional_arguments --skip-plugin-types generic,iconengines,networkinformation  --include-plugins ${plugins})
+				set(additional_arguments --skip-plugin-types generic,networkinformation --include-plugins ${plugins})
 			endif()
 			add_custom_command(TARGET ${target} POST_BUILD
 				COMMAND ${QT_ROOT}/bin/windeployqt.exe --no-libraries --no-translations ${additional_arguments} $<TARGET_FILE_DIR:${target}>
