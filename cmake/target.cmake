@@ -224,7 +224,7 @@ function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
 				set(additional_arguments --skip-plugin-types generic,networkinformation --include-plugins ${plugins})
 			endif()
 			add_custom_command(TARGET ${target} POST_BUILD
-				COMMAND ${QT_ROOT}/bin/windeployqt.exe --no-libraries --no-translations ${additional_arguments} $<TARGET_FILE_DIR:${target}>
+				COMMAND ${QT_BIN_DIR}/windeployqt.exe --no-libraries --no-translations ${additional_arguments} $<TARGET_FILE_DIR:${target}>
 				COMMAND_EXPAND_LISTS
 			)
 		endif()

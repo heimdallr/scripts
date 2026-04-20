@@ -1,5 +1,16 @@
 include_guard(GLOBAL)
 
+get_target_property(QT_QMAKE_EXECUTABLE Qt${QT_MAJOR_VERSION}::qmake IMPORTED_LOCATION)
+execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_BINS OUTPUT_VARIABLE QT_BIN_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_LIBEXECS OUTPUT_VARIABLE QT_LIB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_TRANSLATIONS OUTPUT_VARIABLE QT_TRANSLATIONS_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
 
 function(CopyAndInstallQt)
@@ -12,7 +23,7 @@ function(CopyAndInstallQt)
 	set(QT_PDB_FILES)
 
 	foreach(lib ${ARGN})
-		set(lib_base_file_name "${QT_ROOT}/bin/Qt${QT_MAJOR_VERSION}${lib}${D}")
+		set(lib_base_file_name "${QT_LIB_DIR}/Qt${QT_MAJOR_VERSION}${lib}${D}")
 		list(APPEND QT_BIN_FILES ${lib_base_file_name}.dll)
 		if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 			list(APPEND QT_PDB_FILES ${lib_base_file_name}.pdb)
