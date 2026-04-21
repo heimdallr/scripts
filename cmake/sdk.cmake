@@ -11,6 +11,13 @@ execute_process(
     COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_TRANSLATIONS OUTPUT_VARIABLE QT_TRANSLATIONS_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+set(LIB_INSTALL_DESTINATION lib)
+set(LIB_DESTINATION ${CMAKE_BINARY_DIR}/lib)
+if(WIN32)
+	set(LIB_INSTALL_DESTINATION .)
+	set(LIB_DESTINATION ${CMAKE_BINARY_DIR}/bin)
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
 
 function(CopyAndInstallQtModules)
@@ -22,6 +29,7 @@ function(CopyAndInstallQtModules)
 		if (NOT TARGET ${LIB_TARGET})
 			message(FATAL_ERROR "Cannot find target ${LIB_TARGET} for ${lib} lirary")
 		endif()
+
 		get_target_property(lib_location ${LIB_TARGET} LIB_LOCATION)
 		message(STATUS "${LIB_TARGET}: ${lib_location}")
 		list(APPEND QT_BIN_FILES ${lib_location})
@@ -33,20 +41,23 @@ function(CopyAndInstallQtModules)
 		endif()
 	endforeach()
 
-	file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
-	install(FILES ${QT_BIN_FILES} DESTINATION .)
+	file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${LIB_DESTINATION})
+	install(FILES ${QT_BIN_FILES} DESTINATION ${LIB_INSTALL_DESTINATION})
 endfunction()
 
 function(CopyAndInstallQtPlugins)
 	foreach(plugin ${ARGN})
-		set(PLUGIN_TARGET Qt${QT_MAJOR_VERSION}::${plugin}Plugin)
+		set(PLUGIN_TARGET "Qt${QT_MAJOR_VERSION}::${plugin}Plugin")
 		if (NOT TARGET ${PLUGIN_TARGET})
 			message(FATAL_ERROR "Cannot find target ${PLUGIN_TARGET} for ${plugin} plugin")
 		endif()
-		get_target_property(plugin_location ${PLUGIN_TARGET} LIB_LOCATION)
-		message(STATUS "${PLUGIN_TARGET}: ${plugin_location}")
 
-		get_target_property(plugin_type ${PLUGIN_TARGET} QT_PLUGIN_TYPE)
+		get_target_property(plugin_location ${PLUGIN_TARGET} LIB_LOCATION)
+		get_filename_component(plugin_directory ${plugin_location} DIRECTORY)
+		get_filename_component(plugin_type ${plugin_directory} NAME)
+
+		message(STATUS "${plugin_type}/${PLUGIN_TARGET}: ${plugin_location}")
+
 		file(COPY ${plugin_location} DESTINATION "${CMAKE_BINARY_DIR}/bin/${plugin_type}")
 		install(FILES ${plugin_location} DESTINATION ${plugin_type})
 	endforeach()
@@ -80,7 +91,7 @@ function(CopyAndInstallICU)
 		endif()
 	endforeach()
 		
-	file(COPY ${ICU_BIN_FILES} DESTINATION ${CMAKE_BINARY_DIR}/bin)
-	install(FILES ${ICU_BIN_FILES} DESTINATION .)
+	file(COPY ${ICU_BIN_FILES} DESTINATION ${LIB_DESTINATION})
+	install(FILES ${ICU_BIN_FILES} DESTINATION ${LIB_INSTALL_DESTINATION})
 endfunction()
 
