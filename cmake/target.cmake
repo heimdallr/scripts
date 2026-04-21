@@ -50,7 +50,6 @@ function(AddTarget name type)
 
             #PLUGINS                      # Зависимости для сборки, которые будут использованы при фиксапе
             DEPENDENCIES                 # Указываются другие цели, сборка которых должна происходить раньше этой
-            QT_PLUGINS			         # Плагины QT
             #QT_QML_MODULES               # QML плагины
             #QRC                          # Дополнительные *.qrc файлы с ресурсами, будут подключены и влинкованы в этот модуль
             #FORMS                        # Дополнительные *.ui файлы
@@ -69,7 +68,6 @@ function(AddTarget name type)
     __AddTarget_CreateTarget(${name} ${type} ${ARG_SKIP_INSTALL})
     __AddTarget_AddSources(${name} "${ARG_PROJECT_GROUP}" "${ARG_SOURCE_DIRECTORY}" "${ARG_EXCLUDE_SOURCES}" ${ARG_SOURCES})
     __AddTarget_AddCompilerOptions(${name} ${ARG_COMPILER_OPTIONS})
-	__AddTarget_AddQtPlugins(${name} ${ARG_QT_PLUGINS})
 
     target_compile_definitions(${name} PRIVATE ${ARG_COMPILE_DEFINITIONS})
 
@@ -215,22 +213,6 @@ function(__AddTarget_AddCompilerOptions target) # ARGN - list options
     endforeach ()
 endfunction()
 
-function(__AddTarget_AddQtPlugins target) # ARGN - list plugins
-	if(ARGN)
-		#list(JOIN ${ARGN} "," plugins)
-		string(REPLACE ";"  "," plugins "${ARGN}")
-		if (WIN32)
-			if (QT6)
-				set(additional_arguments --skip-plugin-types generic,networkinformation --include-plugins ${plugins})
-			endif()
-			add_custom_command(TARGET ${target} POST_BUILD
-				COMMAND ${QT_BIN_DIR}/windeployqt.exe --no-libraries --no-translations ${additional_arguments} $<TARGET_FILE_DIR:${target}>
-				COMMAND_EXPAND_LISTS
-			)
-		endif()
-	endif()
-endfunction()
-
 # Создание unit-теста с использованием Google Testing Framework
 # Для создания цели используется AddTarget, в котором:
 #   - type = app_console
@@ -310,16 +292,3 @@ function(__AddTarget__AddBuildTests)
 		endif()
 	endif()
 endfunction()
-
-function (DeployTarget name)
-	qt_generate_deploy_app_script(
-		TARGET ${name}
-		OUTPUT_SCRIPT deploy_script
-		NO_TRANSLATIONS
-		EXCLUDE_PLUGIN_TYPES egldeviceintegrations generic platforminputcontexts qmltooling vectorimageformats
-		INCLUDE_PLUGIN_TYPES wayland-shell-integration
-		INCLUDE_PLUGINS qwayland
-	)
-	install(SCRIPT ${deploy_script})
-endfunction()
-
