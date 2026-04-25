@@ -49,7 +49,9 @@ function(CopyAndInstallQtModules)
 		endif()
 	endforeach()
 
-	file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${LIB_DESTINATION})
+	if(WIN32)
+		file(COPY ${QT_BIN_FILES} ${QT_PDB_FILES} DESTINATION ${LIB_DESTINATION})
+	endif()
 	install(FILES ${QT_BIN_FILES} DESTINATION ${LIB_INSTALL_DESTINATION})
 endfunction()
 
