@@ -1,5 +1,13 @@
 include_guard(GLOBAL)
 
+execute_process(
+	COMMAND git log -1 --format=%h
+	WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+	OUTPUT_VARIABLE GIT_HASH
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+message(STATUS "git hash: ${GIT_HASH}")
+
 include(GenerateExportHeader)
 include(${CMAKE_CURRENT_LIST_DIR}/utils.cmake)
 set(SCRIPT_HELPERS_DIR ${CMAKE_CURRENT_LIST_DIR}/../helpers)
