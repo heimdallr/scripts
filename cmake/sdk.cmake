@@ -108,3 +108,8 @@ function(CopyAndInstallICU)
 	install(FILES ${ICU_BIN_FILES} DESTINATION ${LIB_INSTALL_DESTINATION})
 endfunction()
 
+function(CopyAndInstallDjVuLibre)
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+	configure_file("${djvulibre_BIN_DIRS_${CMAKE_BUILD_TYPE_UPPER}}/djvulibre-21.dll" "${LIB_DESTINATION}/djvulibre.dll" COPYONLY)
+	install(FILES ${ICU_BIN_FILES} DESTINATION ${LIB_INSTALL_DESTINATION})	
+endfunction()
