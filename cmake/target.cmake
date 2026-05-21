@@ -113,11 +113,18 @@ function(__AddTarget_CreateTarget target type skip_install)
         message(FATAL_ERROR "Unknown type TYPE: ${type}")
     endif ()
 
+    set(ext)
     if (CreateTarget STREQUAL library)
         add_library(${target} ${TargetType})
+	    set(ext dll)
     elseif (CreateTarget STREQUAL executable)
         add_executable(${target} ${TargetType})
+	    set(ext exe)
     endif ()
+
+    if (WIN32)
+    	CreateWinRC(${target} ${ext})
+    endif()
 
     # Для shared_lib создаём файл экспорта
     if (${type} STREQUAL shared_lib)
@@ -263,25 +270,19 @@ function(AddBoostTest name)
     add_dependencies(BUILD_TESTS ut_${name})
 endfunction()
 
-function(CreateWinRC name)
-    set(__options)
-    set(__one_val_required
-    	COMPANY_NAME
-    	FILE_NAME
-    	FILE_DESCRIPTION
-    	APP_ICON
-    	APP_VERSION
-    )
-    set(__one_val_optional)
-    set(__multi_val)
-    ParseArgumentsWithConditions(ARG "${__options}" "${__one_val_required}" "${__one_val_optional}" "${__multi_val}" ${ARGN})
-    set(COMPANY_NAME ${ARG_COMPANY_NAME})
-    set(FILE_NAME ${ARG_FILE_NAME})
-    set(FILE_DESCRIPTION ${ARG_FILE_DESCRIPTION})
-    set(APP_ICON ${ARG_APP_ICON})
-    set(APP_VERSION ${ARG_APP_VERSION})
-    string(REPLACE "." "," APP_VERSION_COMMA ${ARG_APP_VERSION})
-    configure_file(${SCRIPT_HELPERS_DIR}/win_resources.rc.in ${CMAKE_CURRENT_BINARY_DIR}/resources/${name}.rc @ONLY)
+function(CreateWinRC name ext)
+    set(FILE_NAME ${name})
+    set(FILE_EXT ${ext})
+    set(PRODUCT_VERSION_COMMA ${MAJOR_PRODUCT_VERSION},${MINOR_PRODUCT_VERSION},${PATCH_PRODUCT_VERSION})
+    set(FILE_VERSION_COMMA ${PRODUCT_VERSION_COMMA})
+    if (BUILD_PRODUCT_VERSION)
+	    set(FILE_VERSION_COMMA ${PRODUCT_VERSION_COMMA},${BUILD_PRODUCT_VERSION})
+	endif()
+
+    set(RC_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/resources/${name}.rc")
+    configure_file(${SCRIPT_HELPERS_DIR}/win_resources.rc.in ${RC_FILE_NAME} @ONLY)
+    target_sources(${name} PRIVATE ${RC_FILE_NAME})
+	source_group(Resources FILES ${RC_FILE_NAME})
 endfunction()
 
 function(__AddTarget__AddBuildTests)
