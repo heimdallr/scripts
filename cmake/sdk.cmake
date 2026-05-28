@@ -69,6 +69,11 @@ function(CopyAndInstallQtPlugins)
 		
 			file(COPY ${plugin_location} DESTINATION "${CMAKE_BINARY_DIR}/bin/${plugin_type}")
 			install(FILES ${plugin_location} DESTINATION "${plugin_type}")
+			
+			if (MSVC AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+				get_filename_component(plugin_name ${plugin_location} NAME_WE)
+				file(COPY ${plugin_directory}/${plugin_name}.pdb DESTINATION "${CMAKE_BINARY_DIR}/bin/${plugin_type}")
+			endif()
 		endif()
 	endforeach()
 endfunction()
