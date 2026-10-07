@@ -79,9 +79,9 @@ function(CopyAndInstallQtPlugins)
 endfunction()
 
 function(CopyAndInstallICU)
-	set(LIBS uc i18n data)
+	set(LIBS uc i18n data io)
 	if (WIN32)
-		set(LIBS uc in dt)
+		set(LIBS uc in dt io)
 	endif()
 
 	set(D)
