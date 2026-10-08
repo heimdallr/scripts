@@ -6,6 +6,8 @@ compiler=gcc
 compiler.cppstd=gnu23
 compiler.libcxx=libstdc++11
 compiler.version=14
-[options]
-[conf]
 
+[options]
+
+[conf]
+tools.build:compiler_executables={"c": "/usr/bin/gcc-14", "cpp": "/usr/bin/g++-14"}
