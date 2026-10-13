@@ -188,6 +188,11 @@ function(__AddTarget_AddSources target project_group source_directory exclude_so
     list(FILTER cmake_scripts INCLUDE REGEX "(\\.cmake|CMakeLists.txt)$")
 
     target_sources(${target} PRIVATE ${ARGN} ${headers} ${sources} ${qt_forms} ${qt_resources} ${qt_ts} ${cmake_scripts})
+    
+    if(PVS_CONFIG_PATH)
+        target_sources(${target} PRIVATE "${PVS_CONFIG_PATH}")
+        source_group("Configs" FILES "${PVS_CONFIG_PATH}")
+    endif()
 
     # Организуем структуру для MSVS
     if(project_group)
