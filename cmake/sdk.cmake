@@ -27,7 +27,7 @@ function(CopyAndInstallQtModules)
 	foreach(lib ${ARGN})
 		set(lib_target Qt${QT_MAJOR_VERSION}::${lib})
 		if (NOT TARGET ${lib_target})
-			message(FATAL_ERROR "Cannot find target ${lib_target} for ${lib} lirary")
+			message(FATAL_ERROR "Cannot find target ${lib_target} for ${lib} library")
 		endif()
 
 		get_target_property(lib_location ${lib_target} LIB_LOCATION)

@@ -7,3 +7,8 @@ compiler.cppstd=gnu23
 compiler.libcxx=libstdc++11
 compiler.version=14
 [options]
+[conf]
+# libdjvulibre.so links libjpeg statically: keep those symbols internal, or system libjpeg users in the process
+# (gdk-pixbuf, Qt's jpeg plugin) bind to them and fail with "Wrong JPEG library version"
+djvulibre/*:tools.build:sharedlinkflags=["-Wl,--exclude-libs,ALL"]
+djvulibre/*:tools.info.package_id:confs=["tools.build:sharedlinkflags"]
