@@ -5,4 +5,5 @@
 //-V::202
 //-V::565
 //-V:QStringView:801
+//-V:std::stop_token:801
 //-V:Q_JSON_VALUE_CONST_REF:801
