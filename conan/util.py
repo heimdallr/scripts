@@ -27,9 +27,6 @@ def configure_djvulibre(recipe):
 def configure_poppler(recipe):
     recipe.options["poppler"].shared = False
 
-def configure_libxml2(recipe):
-    recipe.options["libxml2"].shared = False
-
 def configure_zlib(recipe):
     recipe.options["zlib"].shared = False
 
